@@ -3171,3 +3171,20 @@ textarea {
   background: rgba(255, 255, 255, 0.24);
   margin: 2px 0;
 }
+
+.add-call-card .form-field input,
+.add-call-card .form-field select,
+.add-call-card .form-field textarea {
+  border: 2px solid #d8a8ff !important;
+  box-shadow:
+    0 0 0 1px rgba(216, 168, 255, 0.34),
+    0 0 14px rgba(216, 168, 255, 0.28) !important;
+}
+
+.add-call-card .ghost-button,
+.add-call-card .primary-button {
+  border: 2px solid #3fd8ff !important;
+  box-shadow:
+    0 0 0 1px rgba(63, 216, 255, 0.36),
+    0 0 14px rgba(63, 216, 255, 0.32) !important;
+}
