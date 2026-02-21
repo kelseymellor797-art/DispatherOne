@@ -1,23 +1,23 @@
 :root {
-  color-scheme: dark;
+  color-scheme: light;
   font-family: "IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  --black: #050608;
-  --panel: #0a0f14;
-  --panel-border: rgba(120, 160, 200, 0.35);
-  --text: #f5f7fb;
-  --muted: #94a3b8;
-  --accent: #39d5ff;
-  --accent-strong: #4c6fff;
-  --chip: rgba(57, 213, 255, 0.18);
-  --glow: rgba(57, 213, 255, 0.45);
-  --danger: #ff6b5c;
+  --black: #eef3f9;
+  --panel: #f8fbff;
+  --panel-border: rgba(80, 112, 148, 0.28);
+  --text: #102034;
+  --muted: #5f7288;
+  --accent: #0f8bd8;
+  --accent-strong: #2d6cdf;
+  --chip: rgba(15, 139, 216, 0.12);
+  --glow: rgba(15, 139, 216, 0.22);
+  --danger: #d54848;
   --radius-lg: 24px;
   --radius-md: 14px;
   --radius-sm: 10px;
-  --shadow-soft: 0 20px 60px rgba(3, 15, 28, 0.45);
+  --shadow-soft: 0 16px 38px rgba(20, 45, 78, 0.16);
 }
 
 * {
@@ -35,9 +35,9 @@ body {
   margin: 0;
   min-height: 100vh;
   color: var(--text);
-  background: radial-gradient(circle at 15% 20%, rgba(57, 213, 255, 0.18), transparent 45%),
-    radial-gradient(circle at 80% 10%, rgba(76, 111, 255, 0.2), transparent 40%),
-    radial-gradient(circle at 50% 70%, rgba(38, 80, 115, 0.18), transparent 55%),
+  background: radial-gradient(circle at 12% 18%, rgba(131, 197, 255, 0.34), transparent 43%),
+    radial-gradient(circle at 82% 8%, rgba(142, 178, 255, 0.3), transparent 38%),
+    radial-gradient(circle at 48% 78%, rgba(193, 223, 255, 0.5), transparent 58%),
     var(--black);
   display: flex;
   justify-content: center;
@@ -2235,4 +2235,75 @@ body.floating-mode .content {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* Final light theme override block - placed at EOF to win cascade order. */
+.app-shell {
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: var(--shadow-soft);
+}
+
+.side-panel {
+  background: linear-gradient(165deg, rgba(248, 251, 255, 0.96), rgba(234, 243, 252, 0.96));
+  border-right: 1px solid rgba(80, 112, 148, 0.28);
+  box-shadow: inset -1px 0 0 rgba(16, 32, 52, 0.06);
+}
+
+.panel-toggle,
+.tab-button,
+.panel-action,
+.ghost-button,
+.calculator-selector,
+.call-card,
+.driver-card,
+.queue-actions select,
+.pending-select,
+.pending-assign-inline select,
+.pending-field select,
+.modal-card,
+.drawer-card,
+.global-search input,
+.form-field input,
+.form-field select,
+.form-field textarea,
+.driver-edit-input,
+.driver-name-input,
+.driver-time-input,
+.driver-location-input,
+.driver-status-select,
+.aaa-table td input[type="text"],
+.aaa-notes-input {
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text);
+  border-color: rgba(80, 112, 148, 0.32);
+}
+
+.content {
+  background: rgba(255, 255, 255, 0.64);
+}
+
+.tab-button.is-active {
+  background: linear-gradient(135deg, rgba(120, 203, 255, 0.36), rgba(121, 152, 255, 0.28));
+  box-shadow: 0 8px 22px rgba(45, 108, 223, 0.2);
+}
+
+.ghost-button.is-active,
+.day-chip.is-selected {
+  background: rgba(15, 139, 216, 0.16);
+  color: var(--text);
+}
+
+.primary-button {
+  background: linear-gradient(135deg, rgba(15, 139, 216, 0.92), rgba(45, 108, 223, 0.9));
+}
+
+.danger-button {
+  background: rgba(213, 72, 72, 0.15);
+  color: #8e1e1e;
+}
+
+body.floating-mode {
+  background: radial-gradient(circle at 25% 15%, rgba(131, 197, 255, 0.32), transparent 42%),
+    radial-gradient(circle at 80% 20%, rgba(142, 178, 255, 0.26), transparent 44%),
+    var(--black);
 }
