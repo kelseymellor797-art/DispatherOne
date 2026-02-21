@@ -2509,23 +2509,7 @@ export default function App() {
       if (event.key === "Escape") {
         if (isDrawerWindow || isFloatingWindow || isReportWindow) {
           event.preventDefault();
-          if (isTauri) {
-            void (async () => {
-              try {
-                await emit("drawer-closed");
-              } catch {
-                // ignore
-              }
-              try {
-                const win = getCurrentWindow();
-                await win.close();
-              } catch {
-                // ignore
-              }
-            })();
-          } else {
-            window.close();
-          }
+          void closeCurrentNonMainWindow();
           return;
         }
         return;
@@ -2606,7 +2590,7 @@ export default function App() {
 
     window.addEventListener("keydown", handleKeydown);
     return () => window.removeEventListener("keydown", handleKeydown);
-  }, [activeTabId, isDrawerWindow, isFloatingWindow, isReportWindow, isTauri]);
+  }, [activeTabId, isDrawerWindow, isFloatingWindow, isReportWindow, closeCurrentNonMainWindow]);
 
   useEffect(() => {
     if (!isAddShiftOpen) return;
@@ -4218,12 +4202,28 @@ export default function App() {
     });
   };
 
+  const closeCurrentNonMainWindow = useCallback(async () => {
+    if (isTauri) {
+      try {
+        await emit("drawer-closed");
+      } catch {
+        // ignore
+      }
+      try {
+        const win = getCurrentWindow();
+        await win.close();
+      } catch {
+        // ignore
+      }
+      return;
+    }
+    window.close();
+  }, [isTauri]);
+
   const closeDrawerWindow = async () => {
     try {
       if (isDrawerWindow) {
-        await emit("drawer-closed");
-        const win = getCurrentWindow();
-        await win.close();
+        await closeCurrentNonMainWindow();
         return;
       }
       await emit("drawer-closed");
@@ -4243,9 +4243,6 @@ export default function App() {
         await animateWindowX(drawer, pos.x, targetX, pos.y);
         await drawer.close();
         drawerModeRef.current = null;
-      } else if (isDrawerWindow) {
-        const win = getCurrentWindow();
-        await win.close();
       }
     } catch {
       // Ignore window errors when not running in Tauri.
