@@ -1054,6 +1054,30 @@ fn capture_label_any(text: &str, labels: &[&str]) -> Option<String> {
 }
 
 fn parse_call_number(text: &str) -> Option<String> {
+    let lines: Vec<&str> = text.lines().collect();
+    for (idx, line) in lines.iter().enumerate() {
+        let lower = line.to_lowercase();
+        let looks_like_call_label = lower.contains("call")
+            && (lower.contains('#')
+                || lower.contains(" no")
+                || lower.contains("number")
+                || lower.contains(" id")
+                || lower.contains(" 1d"));
+        if !looks_like_call_label {
+            continue;
+        }
+        let same_line_digits: String = line.chars().filter(|c| c.is_ascii_digit()).collect();
+        if same_line_digits.len() >= 4 {
+            return Some(same_line_digits);
+        }
+        for next in lines.iter().skip(idx + 1).take(2) {
+            let next_digits: String = next.chars().filter(|c| c.is_ascii_digit()).collect();
+            if next_digits.len() >= 4 {
+                return Some(next_digits);
+            }
+        }
+    }
+
     let label_re = Regex::new(r"(?i)\bcall\s*(#|no\.?|number|id)\b").ok();
     for line in text.lines() {
         let lower = line.to_lowercase();
@@ -1219,8 +1243,26 @@ fn capture_label_fuzzy(text: &str, label: &str) -> Option<String> {
 }
 
 fn parse_fields(text: &str) -> ParsedFields {
-    let mut work_type_id = capture_label(text, "Work Type ID")
-        .map(|v| clean_words(&v, 3))
+    let clean_work_type = |raw: &str| {
+        let cleaned = clean_value(raw);
+        let mut parts: Vec<String> = Vec::new();
+        for part in cleaned.split_whitespace() {
+            if part.is_empty() {
+                continue;
+            }
+            parts.push(part.to_string());
+            if parts.len() >= 4 {
+                break;
+            }
+        }
+        parts.join(" ").trim().to_string()
+    };
+
+    let mut work_type_id = capture_label_any(
+        text,
+        &["Work Type ID", "Work Type 1D", "Work Type lD", "WorkTypeID", "Work Type"],
+    )
+        .map(|v| clean_work_type(&v))
         .filter(|value| !value.is_empty());
     let mut vehicle_name = parse_vehicle_name(text);
     let mut street_city = parse_street_city(text);
@@ -1251,11 +1293,20 @@ fn parse_fields(text: &str) -> ParsedFields {
         }
         if work_type_id.is_none() {
             if let Some(value) = line_value(trimmed, "Work Type ID") {
-                work_type_id = Some(clean_words(&value, 3));
+                work_type_id = Some(clean_work_type(&value));
             }
             if work_type_id.is_none() {
                 if let Some(value) = capture_label_fuzzy(trimmed, "Work Type ID") {
-                    work_type_id = Some(clean_words(&value, 3));
+                    work_type_id = Some(clean_work_type(&value));
+                }
+            }
+            if work_type_id.is_none() {
+                if let Some(value) = line_value(trimmed, "Work Type 1D")
+                    .or_else(|| line_value(trimmed, "Work Type lD"))
+                    .or_else(|| line_value(trimmed, "WorkTypeID"))
+                    .or_else(|| line_value(trimmed, "Work Type"))
+                {
+                    work_type_id = Some(clean_work_type(&value));
                 }
             }
         }
