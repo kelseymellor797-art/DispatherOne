@@ -2324,3 +2324,82 @@ body.floating-mode {
     radial-gradient(circle at 54% 74%, rgba(80, 130, 255, 0.16), transparent 48%),
     var(--black);
 }
+
+/* Chart-card style refinements to match reference dashboard panels. */
+.content-header,
+.calls-header,
+.driver-section-header {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(56, 117, 255, 0.38);
+  background: linear-gradient(140deg, rgba(14, 28, 66, 0.72), rgba(9, 17, 41, 0.66));
+  box-shadow: inset 0 0 0 1px rgba(34, 211, 255, 0.1);
+}
+
+.content-title {
+  text-shadow: 0 0 14px rgba(255, 79, 181, 0.34);
+}
+
+.content-kicker {
+  color: #84dcff;
+}
+
+.content-subtitle {
+  color: #a9bfe7;
+}
+
+.call-card,
+.driver-card,
+.pending-field,
+.hero-card {
+  border: 1px solid rgba(56, 117, 255, 0.46);
+  background: linear-gradient(150deg, rgba(13, 26, 62, 0.9), rgba(8, 16, 37, 0.9));
+  box-shadow: inset 0 0 0 1px rgba(34, 211, 255, 0.12), 0 10px 26px rgba(3, 10, 24, 0.45);
+}
+
+.call-card:hover,
+.driver-card:hover {
+  border-color: rgba(255, 79, 181, 0.64);
+  box-shadow: inset 0 0 0 1px rgba(34, 211, 255, 0.15), 0 0 24px rgba(255, 79, 181, 0.24);
+}
+
+.call-subtext,
+.driver-role,
+.pending-field span:first-child,
+.modal-summary {
+  color: #8fb5e6;
+}
+
+.call-status-code,
+.driver-name {
+  color: #f7fbff;
+}
+
+.status-pill {
+  border-color: rgba(56, 117, 255, 0.44);
+  background: linear-gradient(135deg, rgba(16, 31, 71, 0.95), rgba(11, 20, 46, 0.92));
+  box-shadow: inset 0 0 0 1px rgba(34, 211, 255, 0.1);
+}
+
+.status-pill.is-active {
+  border-color: rgba(255, 79, 181, 0.7);
+  background: linear-gradient(135deg, rgba(255, 79, 181, 0.28), rgba(34, 211, 255, 0.24));
+  box-shadow: 0 0 16px rgba(255, 79, 181, 0.22);
+}
+
+.queue-badge,
+.detail-badge,
+.hero-status {
+  border: 1px solid rgba(34, 211, 255, 0.38);
+  background: linear-gradient(135deg, rgba(12, 35, 76, 0.8), rgba(12, 20, 48, 0.76));
+  color: #d4f4ff;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus,
+.global-search input:focus {
+  outline: none;
+  border-color: rgba(255, 79, 181, 0.72);
+  box-shadow: 0 0 0 1px rgba(255, 79, 181, 0.28), 0 0 20px rgba(34, 211, 255, 0.2);
+}
