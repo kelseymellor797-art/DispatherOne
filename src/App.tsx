@@ -3964,6 +3964,12 @@ export default function App() {
       }
 
     const extraNotes: string[] = [];
+    if (callDraft.workType.trim()) {
+      extraNotes.push(`Work Type ID: ${callDraft.workType.trim()}`);
+    }
+    if (callDraft.vehicleType.trim()) {
+      extraNotes.push(`Car Type: ${callDraft.vehicleType.trim()}`);
+    }
     if (callDraft.callType === "LAW_ENFORCEMENT") {
       if (callDraft.leTimestamp) {
         extraNotes.push(`LE Timestamp: ${callDraft.leTimestamp}`);
