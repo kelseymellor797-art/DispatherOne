@@ -2668,12 +2668,17 @@ textarea {
   padding: 24px 8px !important;
   min-height: 92px !important;
   border-radius: 10px !important;
-  border: 1px solid rgba(95, 123, 255, 0.85) !important;
-  background: linear-gradient(155deg, rgba(153, 55, 255, 0.9), rgba(106, 33, 214, 0.92)) !important;
+  border: 1px solid rgba(169, 109, 255, 0.72) !important;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(214, 170, 255, 0.2), transparent 48%),
+    linear-gradient(160deg, rgba(84, 26, 154, 0.66), rgba(45, 12, 98, 0.74)) !important;
+  backdrop-filter: blur(14px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(140%) !important;
   box-shadow:
-    inset 0 0 0 1px rgba(34, 211, 255, 0.16),
-    0 0 0 1px rgba(255, 79, 181, 0.08),
-    0 14px 26px rgba(2, 7, 22, 0.7) !important;
+    inset 0 1px 0 rgba(240, 219, 255, 0.22),
+    inset 0 0 0 1px rgba(193, 141, 255, 0.2),
+    0 12px 26px rgba(13, 4, 30, 0.66),
+    0 0 18px rgba(148, 72, 255, 0.3) !important;
 }
 
 .panel-brand .brand-title,
