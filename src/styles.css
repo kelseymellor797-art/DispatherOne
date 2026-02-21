@@ -2796,6 +2796,13 @@ textarea {
   margin-left: auto;
 }
 
+.calls-header .content-kicker {
+  font-size: 1.02rem !important;
+  font-weight: 800 !important;
+  color: #ffffff !important;
+  letter-spacing: 0.08em !important;
+}
+
 .global-search {
   width: min(560px, 100%) !important;
   max-width: 100% !important;
