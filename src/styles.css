@@ -3232,3 +3232,10 @@ textarea {
     0 0 0 1px rgba(63, 216, 255, 0.36),
     0 0 14px rgba(63, 216, 255, 0.32) !important;
 }
+
+/* Weekly schedule drawer: keep grid at native size while allowing wider window. */
+.weekly-schedule-drawer .weekly-schedule-grid {
+  grid-template-columns: 220px repeat(7, 120px) !important;
+  width: max-content;
+  max-width: none;
+}

@@ -657,7 +657,7 @@ const ALWAYS_ON_TOP_KEY = "dispatcherone.alwaysOnTop";
 const NAV_COLLAPSED_KEY = "dispatcherone.navCollapsed";
 const WINDOW_WIDTH = 640;
 const WEEKLY_SCHEDULE_BASE_WIDTH = 1180;
-const WEEKLY_SCHEDULE_DRAWER_WIDTH = 1700;
+const WEEKLY_SCHEDULE_DRAWER_WIDTH = 1870;
 const WEEKLY_SCHEDULE_DRAWER_HEIGHT = 760;
 const WEEKLY_SCHEDULE_Y_OFFSET = 84;
 const DRAWER_SCREEN_MARGIN = 16;
@@ -5094,7 +5094,7 @@ export default function App() {
     return (
       <div className="drawer-shell">
         {drawerMode === "weekly-schedule" ? (
-          <div className="detail-card call-detail-card">
+          <div className="detail-card call-detail-card weekly-schedule-drawer">
             <header className="call-detail-header">
               <h3>Weekly Schedule</h3>
               <div className="call-detail-actions">
@@ -5135,7 +5135,7 @@ export default function App() {
             </div>
             <section className="schedule-section">
               <h2 className="section-title">Drivers</h2>
-              <div className="schedule-grid">
+              <div className="schedule-grid weekly-schedule-grid">
                 <div className="schedule-grid-header">
                   <div className="schedule-cell schedule-cell--head schedule-cell--corner">
                     Driver
