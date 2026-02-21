@@ -656,7 +656,8 @@ const PANEL_SIDE_KEY = "dispatcherone.panelSide";
 const ALWAYS_ON_TOP_KEY = "dispatcherone.alwaysOnTop";
 const NAV_COLLAPSED_KEY = "dispatcherone.navCollapsed";
 const WINDOW_WIDTH = 640;
-const WEEKLY_SCHEDULE_DRAWER_WIDTH = 1180;
+const WEEKLY_SCHEDULE_BASE_WIDTH = 1180;
+const WEEKLY_SCHEDULE_DRAWER_WIDTH = 1416;
 const WEEKLY_SCHEDULE_DRAWER_HEIGHT = 760;
 const WEEKLY_SCHEDULE_Y_OFFSET = 84;
 const DRAWER_SCREEN_MARGIN = 16;
@@ -4315,7 +4316,7 @@ export default function App() {
       const title = mode === "weekly-schedule" ? "Weekly Schedule" : "Call Details";
       const rawTargetX =
         mode === "weekly-schedule"
-          ? pos.x + size.width - drawerWidth
+          ? pos.x + size.width - WEEKLY_SCHEDULE_BASE_WIDTH
           : panelSide === "right"
             ? pos.x - drawerWidth
             : pos.x + size.width;
@@ -4567,7 +4568,7 @@ export default function App() {
             WEEKLY_SCHEDULE_DRAWER_HEIGHT,
             Math.max(460, monitor.size.height - DRAWER_SCREEN_MARGIN * 2)
           );
-          const rawX = pos.x + size.width - drawerWidth;
+          const rawX = pos.x + size.width - WEEKLY_SCHEDULE_BASE_WIDTH;
           const rawY = pos.y + WEEKLY_SCHEDULE_Y_OFFSET;
           const minX = monitor.position.x;
           const maxX = monitor.position.x + monitor.size.width - drawerWidth;
