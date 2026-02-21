@@ -2613,3 +2613,108 @@ body::before {
   border-color: rgba(95, 123, 255, 0.85) !important;
   background: rgba(10, 22, 56, 0.94) !important;
 }
+
+/* Ultra-neon pass: pure black background + stronger neon intensity. */
+:root {
+  --black: rgb(0, 0, 0) !important;
+  --text: #95fbff !important;
+  --muted: #4ce8ff !important;
+  --accent: #00f0ff !important;
+  --accent-strong: #00a6ff !important;
+  --panel-border: rgba(0, 240, 255, 0.96) !important;
+  --glow: rgba(0, 240, 255, 0.72) !important;
+}
+
+body {
+  background: rgb(0, 0, 0) !important;
+  color: #95fbff !important;
+}
+
+body::before {
+  display: none !important;
+}
+
+.app-shell {
+  border: 2px solid rgba(0, 240, 255, 0.98) !important;
+  background: linear-gradient(170deg, rgba(0, 10, 24, 0.98), rgba(0, 6, 16, 0.98)) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(149, 251, 255, 0.24),
+    0 0 20px rgba(0, 240, 255, 0.56),
+    0 0 56px rgba(0, 170, 255, 0.34),
+    0 0 86px rgba(0, 240, 255, 0.26),
+    0 24px 70px rgba(0, 0, 0, 0.9) !important;
+}
+
+.side-panel,
+.content {
+  background: linear-gradient(170deg, rgba(0, 12, 30, 0.94), rgba(0, 8, 20, 0.92)) !important;
+}
+
+.content-header,
+.calls-header,
+.driver-section-header,
+.call-card,
+.driver-card,
+.pending-field,
+.hero-card,
+.modal-card,
+.drawer-card,
+.tab-button,
+.panel-action,
+.ghost-button,
+.form-field input,
+.form-field select,
+.form-field textarea,
+.global-search input {
+  border: 1px solid rgba(0, 240, 255, 0.94) !important;
+  background: linear-gradient(155deg, rgba(0, 22, 56, 0.96), rgba(0, 14, 34, 0.95)) !important;
+  color: #95fbff !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(149, 251, 255, 0.14),
+    0 0 12px rgba(0, 240, 255, 0.24),
+    0 10px 24px rgba(0, 0, 0, 0.7) !important;
+}
+
+.content-title,
+.call-status-code,
+.driver-name {
+  color: #bfffff !important;
+  text-shadow:
+    0 0 10px rgba(0, 240, 255, 0.75),
+    0 0 24px rgba(0, 166, 255, 0.46) !important;
+}
+
+.content-kicker,
+.content-subtitle,
+.tab-index,
+.tab-icon,
+.driver-role,
+.call-subtext,
+.modal-summary,
+.shortcut-hint {
+  color: #58ecff !important;
+}
+
+.tab-button.is-active,
+.status-pill.is-active,
+.call-card.is-selected,
+.driver-card.is-selected,
+.ghost-button.is-active,
+.day-chip.is-selected,
+.queue-badge,
+.detail-badge,
+.hero-status {
+  border-color: rgba(0, 255, 247, 1) !important;
+  background: linear-gradient(135deg, rgba(0, 255, 247, 0.34), rgba(0, 166, 255, 0.34)) !important;
+  color: #c8ffff !important;
+  box-shadow:
+    0 0 20px rgba(0, 255, 247, 0.52),
+    inset 0 0 0 1px rgba(200, 255, 255, 0.22) !important;
+}
+
+.primary-button {
+  border: 1px solid rgba(0, 255, 247, 1) !important;
+  background: linear-gradient(135deg, rgba(0, 255, 247, 0.98), rgba(0, 166, 255, 0.96)) !important;
+  color: #00101f !important;
+  box-shadow: 0 0 24px rgba(0, 255, 247, 0.58) !important;
+}
