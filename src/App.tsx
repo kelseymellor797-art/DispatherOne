@@ -657,6 +657,9 @@ const ALWAYS_ON_TOP_KEY = "dispatcherone.alwaysOnTop";
 const NAV_COLLAPSED_KEY = "dispatcherone.navCollapsed";
 const WINDOW_WIDTH = 640;
 const WEEKLY_SCHEDULE_DRAWER_WIDTH = 1180;
+const WEEKLY_SCHEDULE_DRAWER_HEIGHT = 760;
+const WEEKLY_SCHEDULE_Y_OFFSET = 84;
+const DRAWER_SCREEN_MARGIN = 16;
 const WINDOW_HEIGHT = 900;
 const ADD_CALL_DEFAULT_HEIGHT = 746.14;
 const DRAWER_LABEL = "drawer";
@@ -4281,17 +4284,27 @@ export default function App() {
       const win = getCurrentWindow();
       const pos = await win.outerPosition();
       const size = await win.outerSize();
-      const height = size.height;
+      let drawerHeight = size.height;
       let drawerWidth = mode === "weekly-schedule" ? WEEKLY_SCHEDULE_DRAWER_WIDTH : WINDOW_WIDTH;
       let monitorMinX: number | null = null;
       let monitorMaxX: number | null = null;
+      let monitorMinY: number | null = null;
+      let monitorMaxY: number | null = null;
       try {
         const monitor = (await monitorFromPoint(pos.x, pos.y)) ?? (await primaryMonitor());
         if (monitor) {
-          const maxDrawerWidth = Math.max(560, monitor.size.width - 32);
+          const maxDrawerWidth = Math.max(560, monitor.size.width - DRAWER_SCREEN_MARGIN * 2);
           drawerWidth = Math.min(drawerWidth, maxDrawerWidth);
+          if (mode === "weekly-schedule") {
+            drawerHeight = Math.min(
+              WEEKLY_SCHEDULE_DRAWER_HEIGHT,
+              Math.max(460, monitor.size.height - DRAWER_SCREEN_MARGIN * 2)
+            );
+          }
           monitorMinX = monitor.position.x;
           monitorMaxX = monitor.position.x + monitor.size.width - drawerWidth;
+          monitorMinY = monitor.position.y;
+          monitorMaxY = monitor.position.y + monitor.size.height - drawerHeight;
         }
       } catch {
         // fallback to default width
@@ -4300,11 +4313,21 @@ export default function App() {
         callId ? `&callId=${encodeURIComponent(callId)}` : ""
       }${edit ? "&edit=1" : ""}`;
       const title = mode === "weekly-schedule" ? "Weekly Schedule" : "Call Details";
-      const rawTargetX = panelSide === "right" ? pos.x - drawerWidth : pos.x + size.width;
+      const rawTargetX =
+        mode === "weekly-schedule"
+          ? pos.x + size.width - drawerWidth
+          : panelSide === "right"
+            ? pos.x - drawerWidth
+            : pos.x + size.width;
+      const rawTargetY = mode === "weekly-schedule" ? pos.y + WEEKLY_SCHEDULE_Y_OFFSET : pos.y;
       const targetX =
         monitorMinX != null && monitorMaxX != null
           ? Math.max(monitorMinX, Math.min(monitorMaxX, rawTargetX))
           : rawTargetX;
+      const targetY =
+        monitorMinY != null && monitorMaxY != null
+          ? Math.max(monitorMinY, Math.min(monitorMaxY, rawTargetY))
+          : rawTargetY;
       const slideOffset = mode === "weekly-schedule" ? 0 : drawerWidth;
       const startX = panelSide === "right" ? targetX - slideOffset : targetX + slideOffset;
       if (drawer) {
@@ -4315,14 +4338,14 @@ export default function App() {
           } else {
             await drawer.emit("tauri://navigate", { url });
           }
-          await drawer.setSize(new LogicalSize(drawerWidth, height));
+          await drawer.setSize(new LogicalSize(drawerWidth, drawerHeight));
           await drawer.setSizeConstraints({
             minWidth: drawerWidth,
             maxWidth: drawerWidth,
             minHeight: 400,
-            maxHeight: height,
+            maxHeight: drawerHeight,
           });
-          await animateWindowX(drawer, startX, targetX, pos.y);
+          await animateWindowX(drawer, startX, targetX, targetY);
           setIsAddCallOpen(false);
           return;
         } catch {
@@ -4339,13 +4362,13 @@ export default function App() {
         url,
         title,
         x: startX,
-        y: pos.y,
+        y: targetY,
         width: drawerWidth,
-        height,
+        height: drawerHeight,
         minWidth: drawerWidth,
         maxWidth: drawerWidth,
         minHeight: 400,
-        maxHeight: height,
+        maxHeight: drawerHeight,
         resizable: true,
         decorations: false,
         alwaysOnTop,
@@ -4360,9 +4383,9 @@ export default function App() {
           minWidth: drawerWidth,
           maxWidth: drawerWidth,
           minHeight: 400,
-          maxHeight: height,
+          maxHeight: drawerHeight,
         });
-        await animateWindowX(newDrawer, startX, targetX, pos.y);
+        await animateWindowX(newDrawer, startX, targetX, targetY);
         await newDrawer.show();
         await newDrawer.setFocus();
         setIsAddCallOpen(false);
@@ -4529,18 +4552,49 @@ export default function App() {
       const win = getCurrentWindow();
       const pos = await win.outerPosition();
       const size = await win.outerSize();
-      const height = size.height;
-      const drawerSize = await drawer.outerSize();
-      const drawerWidth = drawerSize.width;
-      const drawerX =
-        panelSide === "right" ? pos.x - drawerWidth : pos.x + size.width;
-      await drawer.setPosition(new LogicalPosition(drawerX, pos.y));
-      await drawer.setSize(new LogicalSize(drawerWidth, height));
+      let drawerWidth = WINDOW_WIDTH;
+      let drawerHeight = size.height;
+      let drawerX = panelSide === "right" ? pos.x - drawerWidth : pos.x + size.width;
+      let drawerY = pos.y;
+      const monitor = (await monitorFromPoint(pos.x, pos.y)) ?? (await primaryMonitor());
+      if (drawerModeRef.current === "weekly-schedule") {
+        if (monitor) {
+          drawerWidth = Math.min(
+            WEEKLY_SCHEDULE_DRAWER_WIDTH,
+            Math.max(560, monitor.size.width - DRAWER_SCREEN_MARGIN * 2)
+          );
+          drawerHeight = Math.min(
+            WEEKLY_SCHEDULE_DRAWER_HEIGHT,
+            Math.max(460, monitor.size.height - DRAWER_SCREEN_MARGIN * 2)
+          );
+          const rawX = pos.x + size.width - drawerWidth;
+          const rawY = pos.y + WEEKLY_SCHEDULE_Y_OFFSET;
+          const minX = monitor.position.x;
+          const maxX = monitor.position.x + monitor.size.width - drawerWidth;
+          const minY = monitor.position.y;
+          const maxY = monitor.position.y + monitor.size.height - drawerHeight;
+          drawerX = Math.max(minX, Math.min(maxX, rawX));
+          drawerY = Math.max(minY, Math.min(maxY, rawY));
+        } else {
+          drawerWidth = WEEKLY_SCHEDULE_DRAWER_WIDTH;
+          drawerHeight = WEEKLY_SCHEDULE_DRAWER_HEIGHT;
+          drawerX = pos.x + size.width - drawerWidth;
+          drawerY = pos.y + WEEKLY_SCHEDULE_Y_OFFSET;
+        }
+      } else {
+        const drawerSize = await drawer.outerSize();
+        drawerWidth = drawerSize.width;
+        drawerHeight = size.height;
+        drawerX = panelSide === "right" ? pos.x - drawerWidth : pos.x + size.width;
+        drawerY = pos.y;
+      }
+      await drawer.setPosition(new LogicalPosition(drawerX, drawerY));
+      await drawer.setSize(new LogicalSize(drawerWidth, drawerHeight));
       await drawer.setSizeConstraints({
         minWidth: drawerWidth,
         maxWidth: drawerWidth,
         minHeight: 400,
-        maxHeight: height,
+        maxHeight: drawerHeight,
       });
     } catch {
       // Ignore window errors when not running in Tauri.
