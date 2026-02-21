@@ -1017,32 +1017,18 @@ fn normalize_time(raw: &str) -> String {
 
 fn extract_time(value: &str) -> Option<String> {
     let value = value.replace('.', ":").replace('-', ":");
-    let re = Regex::new(r"\b(\d{1,2}[:\s]\d{2}\s*([APap][Mm]))\b").ok()?;
+    let re = Regex::new(r"\b(\d{1,2}[:\s]\d{2}\s*(AM|PM))\b").ok()?;
     if let Some(caps) = re.captures(&value) {
-        return caps.get(1).map(|m| normalize_time(&m.as_str().to_uppercase()));
+        return caps.get(1).map(|m| normalize_time(m.as_str()));
     }
-    let re2 = Regex::new(r"\b(\d{1,2})\D(\d{2})\s*([APap][Mm])\b").ok()?;
-    if let Some(caps) = re2.captures(&value) {
-        return Some(format!("{}:{} {}", &caps[1], &caps[2], &caps[3].to_uppercase()));
-    }
-    let re3 = Regex::new(r"\b(\d{1,2})(\d{2})\s*([APap][Mm])\b").ok()?;
-    if let Some(caps) = re3.captures(&value) {
-        return Some(format!("{}:{} {}", &caps[1], &caps[2], &caps[3].to_uppercase()));
-    }
-    let re4 = Regex::new(r"\b(\d{1,2})\s*([APap][Mm])\b").ok()?;
-    re4.captures(&value)
-        .map(|caps| format!("{}:00 {}", &caps[1], &caps[2].to_uppercase()))
+    let re2 = Regex::new(r"\b(\d{1,2})\D(\d{2})\s*([AP]M)\b").ok()?;
+    re2.captures(&value)
+        .map(|caps| format!("{}:{} {}", &caps[1], &caps[2], &caps[3]))
 }
 
 fn extract_pta_from_text(text: &str) -> Option<String> {
     for line in text.lines() {
-        let lower = line.to_lowercase();
-        if lower.contains("pta")
-            || lower.contains("p t a")
-            || lower.contains("p.t.a")
-            || lower.contains("eta")
-            || lower.contains("e.t.a")
-        {
+        if line.to_lowercase().contains("pta") {
             if let Some(time) = extract_time(line) {
                 return Some(time);
             }
@@ -1238,8 +1224,7 @@ fn parse_fields(text: &str) -> ParsedFields {
         .filter(|value| !value.is_empty());
     let mut vehicle_name = parse_vehicle_name(text);
     let mut street_city = parse_street_city(text);
-    let mut pta = capture_label_any(text, &["PTA", "P T A", "P.T.A", "ETA", "E.T.A"])
-        .and_then(|v| extract_time(&v));
+    let mut pta = capture_label(text, "PTA").and_then(|v| extract_time(&v));
     let mut contact_id = capture_label(text, "Contact ID")
         .map(|v| normalize_name_spacing(&clean_words(&v, 2)))
         .filter(|value| !value.is_empty());
@@ -1291,12 +1276,9 @@ fn parse_fields(text: &str) -> ParsedFields {
             }
         }
         if pta.is_none() {
-            pta = line_value(trimmed, "PTA")
-                .or_else(|| line_value(trimmed, "P T A"))
-                .or_else(|| line_value(trimmed, "P.T.A"))
-                .or_else(|| line_value(trimmed, "ETA"))
-                .or_else(|| line_value(trimmed, "E.T.A"))
-                .and_then(|value| extract_time(&value));
+            if let Some(value) = line_value(trimmed, "PTA") {
+                pta = extract_time(&value);
+            }
         }
         if contact_id.is_none() {
             if let Some(value) = line_value(trimmed, "Contact ID") {
