@@ -3246,7 +3246,7 @@ textarea {
 .weekly-schedule-shell {
   overflow-x: hidden !important;
   overflow-y: auto !important;
-  padding: 24px !important;
+  padding: 17px !important;
   width: 100% !important;
   min-width: 0 !important;
 }
@@ -3256,10 +3256,19 @@ textarea {
   width: 100% !important;
   min-width: 0 !important;
   max-width: none !important;
-  padding: 24px !important;
+  padding: 17px !important;
   box-sizing: border-box !important;
   margin-left: auto !important;
   margin-right: auto !important;
   justify-self: center !important;
   align-self: start !important;
+}
+
+.weekly-schedule-drawer .call-detail-header,
+.weekly-schedule-drawer .schedule-toolbar,
+.weekly-schedule-drawer .schedule-section {
+  width: 1060px !important;
+  max-width: 1060px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
