@@ -3099,6 +3099,8 @@ textarea {
 
 .add-call-card {
   gap: 10px !important;
+  align-content: start !important;
+  justify-content: flex-start !important;
 }
 
 .add-call-card .modal-body {
@@ -3106,6 +3108,16 @@ textarea {
   padding-top: 0 !important;
   margin-top: 0 !important;
   align-content: start !important;
+}
+
+.add-call-card .ocr-form {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
 }
 
 .add-call-card .modal-header h3,
