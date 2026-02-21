@@ -9719,17 +9719,11 @@ export default function App() {
 
       <section className="content">
         <header className="content-header">
-          <div>
-            <p className="content-kicker">{contentKicker}</p>
-            <h1 className="content-title">{activeLabel}</h1>
-            <p className="content-subtitle">
-              {activeTabId === "calls"
-                ? `DispatcherOne ??? Kelsey Mellor${isFloatingWindow ? " ??? Floating panel" : ""}`
-                : `DispatcherOne ??? Cortes Towing${isFloatingWindow ? " ??? Floating panel" : ""}`}
-            </p>
+          <div className="content-heading-row">
+            <h1 className="content-title">{activeLabel.toUpperCase()}</h1>
           </div>
           {showHeaderActions && (
-            <div className="content-actions">
+            <div className="content-search-row">
               <div
                 className="global-search"
                 onBlur={() => {

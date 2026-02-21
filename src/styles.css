@@ -2754,3 +2754,52 @@ textarea {
   font-size: 0.74rem !important;
   letter-spacing: 0.05em !important;
 }
+
+/* Header layout cleanup requested: title only + separate search row. */
+.content-header {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 10px !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.content-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.content-title {
+  margin: 0 !important;
+  font-size: clamp(2.5rem, 5.2vw, 3.7rem) !important;
+  line-height: 1 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+.content-kicker,
+.content-subtitle {
+  display: none !important;
+}
+
+.content-search-row {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.global-search {
+  width: min(560px, 100%) !important;
+  max-width: 100% !important;
+}
+
+.global-search input {
+  width: 100% !important;
+  min-height: 54px !important;
+  border-radius: 20px !important;
+  font-size: 1rem !important;
+  padding: 14px 20px !important;
+}
