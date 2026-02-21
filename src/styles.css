@@ -2664,6 +2664,17 @@ textarea {
   letter-spacing: 0.04em !important;
 }
 
+.panel-brand {
+  padding: 20px 10px !important;
+  border-radius: 10px !important;
+  border: 1px solid rgba(95, 123, 255, 0.85) !important;
+  background: linear-gradient(155deg, rgba(12, 27, 72, 0.97), rgba(8, 18, 47, 0.95)) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(34, 211, 255, 0.16),
+    0 0 0 1px rgba(255, 79, 181, 0.08),
+    0 14px 26px rgba(2, 7, 22, 0.7) !important;
+}
+
 .tab-nav {
   gap: 18px !important;
   margin-left: 0 !important;

@@ -9667,7 +9667,7 @@ export default function App() {
           </div>
           <div className="panel-brand">
             <span className="brand-title">DispatcherOne</span>
-            <span className="brand-subtitle">Cortes Towing</span>
+            <span className="brand-subtitle">Made by: Kelsey Mellor</span>
           </div>
         </div>
 
