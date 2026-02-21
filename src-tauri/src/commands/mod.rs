@@ -1,0 +1,13 @@
+pub mod assignments;
+pub mod admin;
+pub mod calls;
+pub mod dashboard;
+pub mod drivers;
+pub mod google_maps;
+pub mod nearby;
+pub mod ocr;
+pub mod events;
+pub mod reports;
+pub mod search;
+pub mod settings;
+pub mod shifts;

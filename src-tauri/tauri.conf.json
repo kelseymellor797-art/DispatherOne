@@ -1,0 +1,50 @@
+{
+    "$schema":  "https://schema.tauri.app/config/2",
+    "productName":  "DispatcherOne",
+    "version":  "0.1.0",
+    "identifier":  "com.cortestowing.dispatcherone",
+    "build":  {
+                  "beforeDevCommand":  "npm run dev",
+                  "devUrl":  "http://127.0.0.1:5173",
+                  "beforeBuildCommand":  "npm run build",
+                  "frontendDist":  "../dist"
+              },
+    "app":  {
+                "withGlobalTauri":  true,
+                "windows":  [
+                                {
+                                    "label":  "main",
+                                    "title":  "DispatcherOne",
+                                    "width":  800,
+                                    "height":  600,
+                                    "minWidth":  320,
+                                    "resizable":  true,
+                                    "alwaysOnTop":  false,
+                                    "decorations":  true,
+                                    "visible":  true
+                                }
+                            ],
+                "security":  {
+                                 "csp":  null
+                             }
+            },
+    "plugins":  {
+                    "shell":  {
+                                  "open":  true
+                              }
+                },
+    "bundle":  {
+                   "active":  true,
+                   "targets":  "all",
+                   "icon":  [
+                                "icons/32x32.png",
+                                "icons/128x128.png",
+                                "icons/128x128@2x.png",
+                                "icons/icon.icns",
+                                "icons/icon.ico"
+                            ],
+                   "resources":  [
+                                     "resources/tesseract/**/*"
+                                 ]
+               }
+}
