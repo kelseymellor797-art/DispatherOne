@@ -3,6 +3,11 @@ import { emit, listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow, LogicalPosition, LogicalSize, monitorFromPoint, primaryMonitor } from "@tauri-apps/api/window";
+import {
+  isRegistered,
+  register as registerGlobalShortcut,
+  unregister as unregisterGlobalShortcut,
+} from "@tauri-apps/plugin-global-shortcut";
 type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 
 type Tab = {
@@ -2540,6 +2545,7 @@ export default function App() {
   );
 
   useEffect(() => {
+    if (isTauri) return;
     if (!(isDrawerWindow || isFloatingWindow || isReportWindow)) return;
     const onEscapeCapture = (event: KeyboardEvent) => {
       if (!isEscapeKey(event)) return;
@@ -2557,7 +2563,34 @@ export default function App() {
       window.removeEventListener("keydown", onEscapeCapture, true);
       window.removeEventListener("keyup", onEscapeCapture, true);
     };
-  }, [isDrawerWindow, isFloatingWindow, isReportWindow, closeCurrentNonMainWindow]);
+  }, [isTauri, isDrawerWindow, isFloatingWindow, isReportWindow, closeCurrentNonMainWindow]);
+
+  useEffect(() => {
+    if (!isTauri) return;
+    if (!(isDrawerWindow || isFloatingWindow || isReportWindow)) return;
+    let active = true;
+    const setup = async () => {
+      const shortcut = "Escape";
+      try {
+        if (await isRegistered(shortcut)) {
+          await unregisterGlobalShortcut(shortcut);
+        }
+        await registerGlobalShortcut(shortcut, () => {
+          if (!active) return;
+          void closeCurrentNonMainWindow();
+        });
+      } catch {
+        // ignore global shortcut failures
+      }
+    };
+    void setup();
+    return () => {
+      active = false;
+      void unregisterGlobalShortcut("Escape").catch(() => {
+        // ignore
+      });
+    };
+  }, [isTauri, isDrawerWindow, isFloatingWindow, isReportWindow, closeCurrentNonMainWindow]);
 
   useEffect(() => {
     const handleKeydown = (event: KeyboardEvent) => {
@@ -5221,18 +5254,19 @@ export default function App() {
               className="schedule-section"
               style={{
                 width: WEEKLY_SCHEDULE_DRAWER_WIDTH,
-                margin: `${WEEKLY_SCHEDULE_GRID_MARGIN}px auto`,
-                padding: 0,
+                margin: "0 auto",
+                padding: WEEKLY_SCHEDULE_GRID_MARGIN,
+                boxSizing: "border-box",
               }}
             >
               <h2 className="section-title">Drivers</h2>
               <div
                 className="schedule-grid weekly-schedule-grid"
                 style={{
-                  width: WEEKLY_SCHEDULE_GRID_WIDTH,
-                  minWidth: WEEKLY_SCHEDULE_GRID_WIDTH,
-                  maxWidth: WEEKLY_SCHEDULE_GRID_WIDTH,
-                  margin: `${WEEKLY_SCHEDULE_GRID_MARGIN}px auto`,
+                  width: "100%",
+                  minWidth: "100%",
+                  maxWidth: "100%",
+                  margin: 0,
                 }}
               >
                 <div className="schedule-grid-header">

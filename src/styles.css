@@ -3239,10 +3239,10 @@ textarea {
 /* Weekly schedule drawer: keep grid at native size while allowing wider window. */
 .weekly-schedule-drawer .weekly-schedule-grid {
   grid-template-columns: 220px repeat(7, 120px) !important;
-  width: var(--weekly-grid-width) !important;
-  min-width: var(--weekly-grid-width) !important;
-  max-width: var(--weekly-grid-width) !important;
-  margin: var(--weekly-grid-gap) auto !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
 }
 
 .weekly-schedule-shell {
@@ -3255,9 +3255,9 @@ textarea {
 
 .weekly-schedule-drawer {
   overflow-x: hidden !important;
-  width: var(--weekly-drawer-width) !important;
-  min-width: var(--weekly-drawer-width) !important;
-  max-width: var(--weekly-drawer-width) !important;
+  width: 1076px !important;
+  min-width: 1076px !important;
+  max-width: 1076px !important;
   padding: 0 !important;
   box-sizing: border-box !important;
   margin-left: auto !important;
@@ -3268,15 +3268,17 @@ textarea {
 
 .weekly-schedule-drawer .call-detail-header,
 .weekly-schedule-drawer .schedule-toolbar {
-  width: var(--weekly-grid-width) !important;
-  max-width: var(--weekly-grid-width) !important;
+  width: 1060px !important;
+  max-width: 1060px !important;
   margin-left: auto !important;
   margin-right: auto !important;
 }
 
 .weekly-schedule-drawer .schedule-section {
-  width: var(--weekly-drawer-width) !important;
-  max-width: var(--weekly-drawer-width) !important;
+  width: 1076px !important;
+  max-width: 1076px !important;
   margin-left: auto !important;
   margin-right: auto !important;
+  padding: 8px !important;
+  box-sizing: border-box !important;
 }
