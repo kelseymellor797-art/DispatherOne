@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { emit, listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
@@ -671,15 +671,6 @@ const isEscapeKey = (event: KeyboardEvent): boolean =>
 const isEscapeReactEvent = (event: React.KeyboardEvent): boolean =>
   event.key === "Escape" || event.key === "Esc" || event.code === "Escape";
 
-type WindowRole = "main" | "drawer" | "floating" | "report";
-type WindowIntentState = { escCloseRequestId: number };
-type WindowIntentAction = { type: "ESC_CLOSE_REQUESTED" };
-const windowIntentReducer = (state: WindowIntentState, action: WindowIntentAction): WindowIntentState => {
-  if (action.type === "ESC_CLOSE_REQUESTED") {
-    return { escCloseRequestId: state.escCloseRequestId + 1 };
-  }
-  return state;
-};
 const FISH_WILDLIFE_TOW_FEE = 210;
 const FISH_WILDLIFE_STORAGE_DAILY = 40;
 const FISH_WILDLIFE_GATE_FEE = 105;
@@ -730,14 +721,6 @@ export default function App() {
   const isReportWindow = Boolean(reportTabId);
   const isDrawerWindow =
     drawerMode === "new-call" || drawerMode === "call-detail" || drawerMode === "weekly-schedule";
-  const windowRole: WindowRole = isDrawerWindow
-    ? "drawer"
-    : isFloatingWindow
-      ? "floating"
-      : isReportWindow
-        ? "report"
-        : "main";
-  const [windowIntent, dispatchWindowIntent] = useReducer(windowIntentReducer, { escCloseRequestId: 0 });
   const showNavigation = !isReportWindow;
   const showHeaderActions = !isReportWindow;
 
@@ -757,6 +740,8 @@ export default function App() {
   const floatingWindowRef = useRef<Window | null>(null);
   const drawerModeRef = useRef<"call-detail" | "weekly-schedule" | null>(null);
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const weeklyGridRef = useRef<HTMLDivElement | null>(null);
+  const lastEscapeHandledAtRef = useRef(0);
   const [dashboard, setDashboard] = useState<DashboardSnapshot | null>(null);
   const [dashboardLoading, setDashboardLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
@@ -790,16 +775,6 @@ export default function App() {
   const [reportStartDate, setReportStartDate] = useState(() => dateKey(new Date()));
   const [reportEndDate, setReportEndDate] = useState(() => dateKey(new Date()));
   const [selectedDriverId, setSelectedDriverId] = useState<string | null>(null);
-  const windowLayoutPolicy = useMemo(
-    () => ({
-      weekly: {
-        drawerWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
-        gridWidth: WEEKLY_SCHEDULE_GRID_WIDTH,
-        gridMargin: WEEKLY_SCHEDULE_GRID_MARGIN,
-      },
-    }),
-    []
-  );
   const [driverEditMode, setDriverEditMode] = useState<Record<string, boolean>>({});
   const [driverEditDrafts, setDriverEditDrafts] = useState<Record<string, DriverCardDraft>>({});
   const [dragPayload, setDragPayload] = useState<{
@@ -2521,6 +2496,48 @@ export default function App() {
   }, [isTauri, isDrawerWindow, drawerMode]);
 
   useEffect(() => {
+    if (!isTauri) return;
+    if (!isDrawerWindow || drawerMode !== "weekly-schedule") return;
+    let active = true;
+    let resizeObserver: ResizeObserver | null = null;
+    const fitWeeklyDrawerToGrid = async () => {
+      if (!active) return;
+      const grid = weeklyGridRef.current;
+      if (!grid) return;
+      const measuredGridWidth = Math.ceil(grid.scrollWidth);
+      const measuredDrawerWidth = measuredGridWidth + WEEKLY_SCHEDULE_GRID_MARGIN * 2;
+      const targetDrawerWidth = Math.max(WEEKLY_SCHEDULE_DRAWER_WIDTH, measuredDrawerWidth);
+      try {
+        const win = getCurrentWindow();
+        await win.setSize(new LogicalSize(targetDrawerWidth, WEEKLY_SCHEDULE_DRAWER_HEIGHT));
+        await win.setSizeConstraints({
+          minWidth: targetDrawerWidth,
+          maxWidth: targetDrawerWidth,
+          minHeight: 400,
+          maxHeight: WEEKLY_SCHEDULE_DRAWER_HEIGHT,
+        });
+      } catch {
+        // ignore measurement sizing failures
+      }
+    };
+
+    const frame = window.requestAnimationFrame(() => {
+      void fitWeeklyDrawerToGrid();
+      if (weeklyGridRef.current) {
+        resizeObserver = new ResizeObserver(() => {
+          void fitWeeklyDrawerToGrid();
+        });
+        resizeObserver.observe(weeklyGridRef.current);
+      }
+    });
+    return () => {
+      active = false;
+      window.cancelAnimationFrame(frame);
+      if (resizeObserver) resizeObserver.disconnect();
+    };
+  }, [isTauri, isDrawerWindow, drawerMode]);
+
+  useEffect(() => {
     if (isDrawerWindow) return;
     const win = getCurrentWindow();
     const setup = async () => {
@@ -2558,22 +2575,28 @@ export default function App() {
 
   const handleNonMainEscapeCapture = useCallback(
     (event: React.KeyboardEvent) => {
-      if (windowRole === "main") return;
+      if (!(isDrawerWindow || isFloatingWindow || isReportWindow)) return;
       if (!isEscapeReactEvent(event)) return;
+      const now = Date.now();
+      if (now - lastEscapeHandledAtRef.current < 150) return;
+      lastEscapeHandledAtRef.current = now;
       event.preventDefault();
       event.stopPropagation();
-      dispatchWindowIntent({ type: "ESC_CLOSE_REQUESTED" });
+      void closeCurrentNonMainWindow();
     },
-    [windowRole]
+    [isDrawerWindow, isFloatingWindow, isReportWindow, closeCurrentNonMainWindow]
   );
 
   useEffect(() => {
-    if (windowRole === "main") return;
+    if (!(isDrawerWindow || isFloatingWindow || isReportWindow)) return;
     const onEscapeCapture = (event: KeyboardEvent) => {
       if (!isEscapeKey(event)) return;
+      const now = Date.now();
+      if (now - lastEscapeHandledAtRef.current < 150) return;
+      lastEscapeHandledAtRef.current = now;
       event.preventDefault();
       event.stopPropagation();
-      dispatchWindowIntent({ type: "ESC_CLOSE_REQUESTED" });
+      void closeCurrentNonMainWindow();
     };
     document.addEventListener("keydown", onEscapeCapture, true);
     document.addEventListener("keyup", onEscapeCapture, true);
@@ -2585,13 +2608,7 @@ export default function App() {
       window.removeEventListener("keydown", onEscapeCapture, true);
       window.removeEventListener("keyup", onEscapeCapture, true);
     };
-  }, [windowRole]);
-
-  useEffect(() => {
-    if (windowRole === "main") return;
-    if (windowIntent.escCloseRequestId === 0) return;
-    void closeCurrentNonMainWindow();
-  }, [windowRole, windowIntent.escCloseRequestId, closeCurrentNonMainWindow]);
+  }, [isDrawerWindow, isFloatingWindow, isReportWindow, closeCurrentNonMainWindow]);
 
   useEffect(() => {
     const handleKeydown = (event: KeyboardEvent) => {
@@ -5193,9 +5210,9 @@ export default function App() {
                 padding: 0,
                 overflowX: "hidden",
                 overflowY: "hidden",
-                width: windowLayoutPolicy.weekly.drawerWidth,
-                minWidth: windowLayoutPolicy.weekly.drawerWidth,
-                maxWidth: windowLayoutPolicy.weekly.drawerWidth,
+                width: WEEKLY_SCHEDULE_DRAWER_WIDTH,
+                minWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
+                maxWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
                 margin: "0 auto",
               }
             : undefined
@@ -5205,15 +5222,15 @@ export default function App() {
           <div
             className="detail-card call-detail-card weekly-schedule-drawer"
             style={{
-              width: windowLayoutPolicy.weekly.drawerWidth,
-              minWidth: windowLayoutPolicy.weekly.drawerWidth,
-              maxWidth: windowLayoutPolicy.weekly.drawerWidth,
+              width: WEEKLY_SCHEDULE_DRAWER_WIDTH,
+              minWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
+              maxWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
               padding: 0,
               marginLeft: "auto",
               marginRight: "auto",
             }}
           >
-            <header className="call-detail-header" style={{ width: windowLayoutPolicy.weekly.gridWidth, margin: "0 auto" }}>
+            <header className="call-detail-header" style={{ width: WEEKLY_SCHEDULE_GRID_WIDTH, margin: "0 auto" }}>
               <h3>Weekly Schedule</h3>
               <div className="call-detail-actions">
                 <button className="ghost-button" onClick={() => void closeDrawerWindow()}>
@@ -5221,7 +5238,7 @@ export default function App() {
                 </button>
               </div>
             </header>
-            <div className="schedule-toolbar" style={{ width: windowLayoutPolicy.weekly.gridWidth, margin: "0 auto" }}>
+            <div className="schedule-toolbar" style={{ width: WEEKLY_SCHEDULE_GRID_WIDTH, margin: "0 auto" }}>
               <div>
                 <p className="content-kicker">Employee schedule</p>
                 <h2 className="schedule-title">Week of {weekLabel}</h2>
@@ -5254,14 +5271,15 @@ export default function App() {
             <section
               className="schedule-section"
               style={{
-                width: windowLayoutPolicy.weekly.drawerWidth,
+                width: WEEKLY_SCHEDULE_DRAWER_WIDTH,
                 margin: "0 auto",
-                padding: windowLayoutPolicy.weekly.gridMargin,
+                padding: WEEKLY_SCHEDULE_GRID_MARGIN,
                 boxSizing: "border-box",
               }}
             >
               <h2 className="section-title">Drivers</h2>
               <div
+                ref={weeklyGridRef}
                 className="schedule-grid weekly-schedule-grid"
                 style={{
                   width: "100%",
