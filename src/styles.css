@@ -3158,6 +3158,8 @@ textarea {
   font-size: 0.86rem;
   letter-spacing: 0.03em;
   text-transform: none;
+  color: #39f3ff;
+  text-shadow: 0 0 8px rgba(57, 243, 255, 0.6);
 }
 
 .add-call-actions-row {
