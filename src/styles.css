@@ -1,14 +1,14 @@
 :root {
-  color-scheme: light;
+  color-scheme: dark;
   font-family: "IBM Plex Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  --black: #f4f6ff;
-  --panel: #fbfcff;
+  --black: #090f21;
+  --panel: #111833;
   --panel-border: rgba(146, 109, 255, 0.34);
-  --text: #1a1740;
-  --muted: #615e93;
+  --text: #ebefff;
+  --muted: #a8b0d9;
   --accent: #6f4bff;
   --accent-strong: #00c0ff;
   --chip: rgba(255, 54, 171, 0.14);
@@ -17,7 +17,7 @@
   --radius-lg: 24px;
   --radius-md: 14px;
   --radius-sm: 10px;
-  --shadow-soft: 0 18px 44px rgba(93, 70, 191, 0.22);
+  --shadow-soft: 0 20px 48px rgba(5, 9, 20, 0.62);
 }
 
 * {
@@ -35,10 +35,10 @@ body {
   margin: 0;
   min-height: 100vh;
   color: var(--text);
-  background: radial-gradient(circle at 12% 16%, rgba(0, 255, 188, 0.24), transparent 42%),
+  background: radial-gradient(circle at 12% 16%, rgba(0, 255, 188, 0.16), transparent 42%),
     radial-gradient(circle at 82% 9%, rgba(177, 66, 255, 0.26), transparent 40%),
-    radial-gradient(circle at 48% 80%, rgba(0, 192, 255, 0.2), transparent 58%),
-    radial-gradient(circle at 70% 45%, rgba(255, 54, 171, 0.16), transparent 52%),
+    radial-gradient(circle at 48% 80%, rgba(0, 192, 255, 0.16), transparent 58%),
+    radial-gradient(circle at 70% 45%, rgba(255, 54, 171, 0.12), transparent 52%),
     var(--black);
   display: flex;
   justify-content: center;
@@ -2240,13 +2240,13 @@ body.floating-mode .content {
 
 /* Final light theme override block - placed at EOF to win cascade order. */
 .app-shell {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.86), rgba(245, 247, 255, 0.8));
-  border: 1px solid rgba(151, 120, 255, 0.36);
-  box-shadow: 0 0 0 1px rgba(0, 192, 255, 0.2), 0 0 36px rgba(177, 66, 255, 0.16), var(--shadow-soft);
+  background: linear-gradient(145deg, rgba(13, 18, 38, 0.9), rgba(10, 14, 32, 0.88));
+  border: 1px solid rgba(151, 120, 255, 0.44);
+  box-shadow: 0 0 0 1px rgba(0, 192, 255, 0.22), 0 0 42px rgba(177, 66, 255, 0.24), var(--shadow-soft);
 }
 
 .side-panel {
-  background: linear-gradient(170deg, rgba(250, 249, 255, 0.98), rgba(236, 255, 251, 0.9));
+  background: linear-gradient(170deg, rgba(16, 22, 45, 0.95), rgba(12, 30, 42, 0.92));
   border-right: 1px solid rgba(151, 120, 255, 0.42);
   box-shadow: inset -1px 0 0 rgba(0, 192, 255, 0.26);
 }
@@ -2275,14 +2275,14 @@ body.floating-mode .content {
 .driver-status-select,
 .aaa-table td input[type="text"],
 .aaa-notes-input {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(244, 255, 252, 0.86));
+  background: linear-gradient(135deg, rgba(20, 27, 54, 0.92), rgba(10, 26, 40, 0.88));
   color: var(--text);
   border-color: rgba(151, 120, 255, 0.34);
-  box-shadow: 0 0 0 1px rgba(0, 255, 188, 0.06);
+  box-shadow: 0 0 0 1px rgba(0, 255, 188, 0.1);
 }
 
 .content {
-  background: linear-gradient(150deg, rgba(255, 255, 255, 0.62), rgba(243, 249, 255, 0.48));
+  background: linear-gradient(150deg, rgba(12, 18, 38, 0.58), rgba(10, 16, 34, 0.46));
 }
 
 .tab-button.is-active {
@@ -2294,7 +2294,7 @@ body.floating-mode .content {
 .ghost-button.is-active,
 .day-chip.is-selected {
   border-color: rgba(0, 255, 188, 0.5);
-  background: linear-gradient(135deg, rgba(0, 255, 188, 0.2), rgba(0, 192, 255, 0.16));
+  background: linear-gradient(135deg, rgba(0, 255, 188, 0.28), rgba(0, 192, 255, 0.22));
   color: var(--text);
 }
 
@@ -2311,8 +2311,8 @@ body.floating-mode .content {
 }
 
 body.floating-mode {
-  background: radial-gradient(circle at 25% 15%, rgba(0, 255, 188, 0.2), transparent 42%),
-    radial-gradient(circle at 80% 20%, rgba(177, 66, 255, 0.24), transparent 44%),
-    radial-gradient(circle at 54% 74%, rgba(0, 192, 255, 0.18), transparent 48%),
+  background: radial-gradient(circle at 25% 15%, rgba(0, 255, 188, 0.14), transparent 42%),
+    radial-gradient(circle at 80% 20%, rgba(177, 66, 255, 0.26), transparent 44%),
+    radial-gradient(circle at 54% 74%, rgba(0, 192, 255, 0.14), transparent 48%),
     var(--black);
 }
