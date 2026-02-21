@@ -541,9 +541,16 @@ const extractCallNumberFromOcrText = (rawText: string | null | undefined) => {
         if (nextDigitsMatch?.[1]) return nextDigitsMatch[1];
       }
     }
+
+    const slashDigits = line.match(/\/\s*([0-9]{5,10})\b/);
+    if (slashDigits?.[1] && (lower.includes("sa") || lower.includes("call") || lower.includes("dispatch"))) {
+      return slashDigits[1];
+    }
   }
   const tokenMatch = rawText.match(callTokenRe);
   if (tokenMatch?.[1]) return tokenMatch[1];
+  const globalSlashDigits = rawText.match(/\/\s*([0-9]{5,10})\b/);
+  if (globalSlashDigits?.[1]) return globalSlashDigits[1];
   const slashAfterCallMatch = rawText.match(/call[^\n\r/]*\/\s*([0-9]{4,10})\b/i);
   if (slashAfterCallMatch?.[1]) return slashAfterCallMatch[1];
   return "";
