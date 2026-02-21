@@ -8630,13 +8630,6 @@ export default function App() {
             <div className="driver-section-header">
               <h2>DRIVERS</h2>
               <div className="driver-section-actions">
-                <button
-                  className="ghost-button"
-                  type="button"
-                  onClick={() => void openDrawerWindow("weekly-schedule")}
-                >
-                  Weekly Schedule
-                </button>
                 <span className="driver-section-meta">
                   <span className="count-badge">{dashboardDrivers.length}</span>
                 </span>
@@ -9377,6 +9370,15 @@ export default function App() {
             {activeTabId === "calls" && !isDrawerWindow && (
               <button className="ghost-button header-add-call-button" onClick={openAddCallDrawer}>
                 Add Call
+              </button>
+            )}
+            {activeTabId === "drivers" && !isDrawerWindow && (
+              <button
+                className="ghost-button header-add-call-button"
+                type="button"
+                onClick={() => void openDrawerWindow("weekly-schedule")}
+              >
+                Weekly Schedule
               </button>
             )}
           </div>
