@@ -2504,6 +2504,24 @@ export default function App() {
     };
   }, [isDrawerWindow]);
 
+  const closeCurrentNonMainWindow = useCallback(async () => {
+    if (isTauri) {
+      try {
+        await emit("drawer-closed");
+      } catch {
+        // ignore
+      }
+      try {
+        const win = getCurrentWindow();
+        await win.close();
+      } catch {
+        // ignore
+      }
+      return;
+    }
+    window.close();
+  }, [isTauri]);
+
   useEffect(() => {
     const handleKeydown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
@@ -4201,24 +4219,6 @@ export default function App() {
       requestAnimationFrame(step);
     });
   };
-
-  const closeCurrentNonMainWindow = useCallback(async () => {
-    if (isTauri) {
-      try {
-        await emit("drawer-closed");
-      } catch {
-        // ignore
-      }
-      try {
-        const win = getCurrentWindow();
-        await win.close();
-      } catch {
-        // ignore
-      }
-      return;
-    }
-    window.close();
-  }, [isTauri]);
 
   const closeDrawerWindow = async () => {
     try {

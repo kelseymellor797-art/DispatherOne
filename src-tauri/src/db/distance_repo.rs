@@ -13,6 +13,7 @@ fn haversine_meters(a: (f64, f64), b: (f64, f64)) -> f64 {
     6_371_000.0 * c
 }
 
+#[allow(dead_code)]
 fn fallback_table(dist_points: &[(f64, f64)], pickup: (f64, f64)) -> Vec<(f64, Option<f64>)> {
     dist_points
         .iter()
@@ -52,6 +53,7 @@ pub async fn osrm_route_distance_meters(
     Ok(result.meters)
 }
 
+#[allow(dead_code)]
 pub fn osrm_table_driver_to_pickup_blocking(
     driver_points: &[(f64, f64)],
     pickup: (f64, f64),

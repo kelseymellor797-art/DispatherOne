@@ -54,11 +54,14 @@ struct MapQuestLocation {
     #[serde(default)]
     street: String,
     #[serde(default)]
-    adminArea5: String,
+    #[serde(rename = "adminArea5")]
+    admin_area5: String,
     #[serde(default)]
-    adminArea3: String,
+    #[serde(rename = "adminArea3")]
+    admin_area3: String,
     #[serde(default)]
-    postalCode: String,
+    #[serde(rename = "postalCode")]
+    postal_code: String,
     #[serde(rename = "latLng")]
     lat_lng: MapQuestLatLng,
 }
@@ -207,24 +210,24 @@ fn build_components(location: &MapQuestLocation) -> Vec<AddressComponent> {
             types,
         });
     }
-    if !location.adminArea5.is_empty() {
+    if !location.admin_area5.is_empty() {
         components.push(AddressComponent {
-            long_name: location.adminArea5.clone(),
-            short_name: location.adminArea5.clone(),
+            long_name: location.admin_area5.clone(),
+            short_name: location.admin_area5.clone(),
             types: vec!["locality".to_string()],
         });
     }
-    if !location.adminArea3.is_empty() {
+    if !location.admin_area3.is_empty() {
         components.push(AddressComponent {
-            long_name: location.adminArea3.clone(),
-            short_name: location.adminArea3.clone(),
+            long_name: location.admin_area3.clone(),
+            short_name: location.admin_area3.clone(),
             types: vec!["administrative_area_level_1".to_string()],
         });
     }
-    if !location.postalCode.is_empty() {
+    if !location.postal_code.is_empty() {
         components.push(AddressComponent {
-            long_name: location.postalCode.clone(),
-            short_name: location.postalCode.clone(),
+            long_name: location.postal_code.clone(),
+            short_name: location.postal_code.clone(),
             types: vec!["postal_code".to_string()],
         });
     }
@@ -234,9 +237,9 @@ fn build_components(location: &MapQuestLocation) -> Vec<AddressComponent> {
 fn validation_score(input: &str, location: &MapQuestLocation, result_count: usize) -> i32 {
     let input_has_number = has_street_number(input);
     let has_street = !location.street.is_empty();
-    let has_city = !location.adminArea5.is_empty();
-    let has_state = !location.adminArea3.is_empty();
-    let has_postal = !location.postalCode.is_empty();
+    let has_city = !location.admin_area5.is_empty();
+    let has_state = !location.admin_area3.is_empty();
+    let has_postal = !location.postal_code.is_empty();
     let mut score = 55;
     if has_street {
         score += 20;
@@ -265,17 +268,17 @@ fn format_address(location: &MapQuestLocation) -> String {
         parts.push(location.street.trim().to_string());
     }
     let mut city_state = Vec::new();
-    if !location.adminArea5.is_empty() {
-        city_state.push(location.adminArea5.trim().to_string());
+    if !location.admin_area5.is_empty() {
+        city_state.push(location.admin_area5.trim().to_string());
     }
-    if !location.adminArea3.is_empty() {
-        city_state.push(location.adminArea3.trim().to_string());
+    if !location.admin_area3.is_empty() {
+        city_state.push(location.admin_area3.trim().to_string());
     }
     if !city_state.is_empty() {
         parts.push(city_state.join(", "));
     }
-    if !location.postalCode.is_empty() {
-        parts.push(location.postalCode.trim().to_string());
+    if !location.postal_code.is_empty() {
+        parts.push(location.postal_code.trim().to_string());
     }
     if parts.is_empty() {
         "Unknown address".to_string()
@@ -322,7 +325,7 @@ pub async fn geocode_validate(address: &str) -> Result<GeocodeValidationResult> 
     let components = build_components(first);
     let result_types = if !first.street.is_empty() {
         vec!["street_address".to_string()]
-    } else if !first.adminArea5.is_empty() {
+    } else if !first.admin_area5.is_empty() {
         vec!["locality".to_string()]
     } else {
         vec!["unknown".to_string()]
