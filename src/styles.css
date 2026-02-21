@@ -2780,6 +2780,15 @@ textarea {
   padding: 14px 4px !important;
   gap: 0 !important;
   justify-content: center !important;
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 999px !important;
+  margin: 0 auto !important;
+  border: 1px solid rgba(128, 62, 212, 0.72) !important;
+  background: linear-gradient(160deg, rgba(30, 9, 58, 0.72), rgba(16, 5, 34, 0.82)) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(242, 214, 255, 0.16),
+    0 8px 16px rgba(7, 2, 16, 0.62) !important;
 }
 
 .nav-collapsed .tab-label {
@@ -2790,6 +2799,24 @@ textarea {
   display: inline-flex !important;
   width: 22px !important;
   height: 22px !important;
+  color: #d8ceff !important;
+}
+
+.side-panel .tab-icon {
+  display: none !important;
+}
+
+.nav-collapsed .tab-button.is-active {
+  border-color: rgba(0, 255, 255, 0.96) !important;
+  background: linear-gradient(135deg, rgba(0, 255, 247, 0.34), rgba(0, 166, 255, 0.38)) !important;
+  box-shadow:
+    0 0 18px rgba(0, 255, 255, 0.44),
+    inset 0 0 0 1px rgba(220, 255, 255, 0.22) !important;
+}
+
+.nav-collapsed .tab-button.is-active .tab-icon {
+  color: #ffffff !important;
+  filter: drop-shadow(0 0 8px rgba(0, 255, 255, 0.72)) !important;
 }
 
 .tab-nav {

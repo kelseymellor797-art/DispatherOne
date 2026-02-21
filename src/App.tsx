@@ -9706,14 +9706,6 @@ export default function App() {
         </nav>
 
         <div className="panel-footer">
-          <button
-            className="panel-action"
-            aria-pressed={isFloatingWindow}
-            title={isFloatingWindow ? "Return to dock" : "Open floating panel"}
-            onClick={handleFloatingClick}
-          >
-            {isFloatingWindow ? "Return to dock" : "Floating panel"}
-          </button>
           <div className="shortcut-hint">Ctrl/⌘ + 1-5</div>
         </div>
       </aside>
