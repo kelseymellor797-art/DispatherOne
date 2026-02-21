@@ -303,7 +303,7 @@ const tabs: Tab[] = [
   },
   {
     id: "calculators",
-    label: "Calculators",
+    label: "TOOLS",
     icon: (
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <rect x="5" y="3" width="14" height="18" rx="2.3" fill="currentColor" />
