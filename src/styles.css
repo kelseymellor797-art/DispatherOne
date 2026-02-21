@@ -3076,7 +3076,7 @@ textarea {
 
 .add-call-source-row {
   display: grid !important;
-  gap: 14px !important;
+  gap: 100px !important;
 }
 
 .add-call-source-label {
@@ -3087,6 +3087,12 @@ textarea {
 
 .add-call-source-field select {
   width: 100% !important;
+}
+
+.add-call-card .modal-header {
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+  margin-bottom: 100px !important;
 }
 
 /* Calls window: normalize section spacing and increase by 15%. */
