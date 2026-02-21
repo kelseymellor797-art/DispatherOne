@@ -735,9 +735,9 @@ body {
 }
 
 .driver-section {
-  margin-top: 20px;
+  margin-top: 23px;
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .driver-section-header {
@@ -807,7 +807,7 @@ body {
 .driver-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
+  gap: 18px;
 }
 
 .driver-card.detail-card {
