@@ -3076,7 +3076,7 @@ textarea {
 
 .add-call-source-row {
   display: grid !important;
-  gap: 0 !important;
+  gap: 10px !important;
   align-content: start !important;
   margin-top: 0 !important;
 }
@@ -3094,15 +3094,15 @@ textarea {
 .add-call-card .modal-header {
   justify-content: flex-start !important;
   align-items: flex-start !important;
-  margin-bottom: 0 !important;
+  margin-bottom: 10px !important;
 }
 
 .add-call-card {
-  gap: 0 !important;
+  gap: 10px !important;
 }
 
 .add-call-card .modal-body {
-  gap: 0 !important;
+  gap: 10px !important;
   padding-top: 0 !important;
   margin-top: 0 !important;
   align-content: start !important;
@@ -3176,7 +3176,7 @@ textarea {
 
 .add-call-layout {
   display: grid;
-  gap: 12px;
+  gap: 10px;
 }
 
 .add-call-capture-note {
@@ -3191,6 +3191,10 @@ textarea {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.add-call-card .form-row {
+  gap: 10px !important;
 }
 
 .add-call-divider {
