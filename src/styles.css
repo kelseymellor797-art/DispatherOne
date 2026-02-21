@@ -3236,20 +3236,29 @@ textarea {
 /* Weekly schedule drawer: keep grid at native size while allowing wider window. */
 .weekly-schedule-drawer .weekly-schedule-grid {
   grid-template-columns: 220px repeat(7, 120px) !important;
-  width: 1060px;
-  max-width: none;
+  width: 1060px !important;
+  min-width: 1060px !important;
+  max-width: 1060px !important;
 }
 
 .weekly-schedule-shell {
   overflow-x: auto !important;
   overflow-y: auto !important;
-  padding: 12px !important;
+  padding: 0 !important;
+  width: max-content !important;
+  min-width: 1108px !important;
 }
 
 .weekly-schedule-drawer {
-  overflow-x: auto;
-  width: max-content;
-  min-width: 1088px;
-  margin-left: auto;
-  margin-right: 0;
+  overflow-x: hidden !important;
+  width: 1108px !important;
+  min-width: 1108px !important;
+  max-width: 1108px !important;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+  box-sizing: border-box !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  justify-self: start !important;
+  align-self: start !important;
 }
