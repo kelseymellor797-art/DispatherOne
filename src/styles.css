@@ -3076,7 +3076,7 @@ textarea {
 
 .add-call-source-row {
   display: grid !important;
-  gap: 5px !important;
+  gap: 0 !important;
   align-content: start !important;
   margin-top: 0 !important;
 }
@@ -3098,14 +3098,20 @@ textarea {
 }
 
 .add-call-card {
-  gap: 5px !important;
+  gap: 0 !important;
 }
 
 .add-call-card .modal-body {
-  gap: 5px !important;
+  gap: 0 !important;
   padding-top: 0 !important;
   margin-top: 0 !important;
   align-content: start !important;
+}
+
+.add-call-card .modal-header h3,
+.add-call-source-label,
+.add-call-source-field select {
+  line-height: 1.5 !important;
 }
 
 /* Calls window: normalize section spacing and increase by 15%. */
