@@ -5581,11 +5581,6 @@ export default function App() {
     contentBody = (
       <div className="calls-layout">
         <div className="calls-main">
-          <div className="calls-add-row">
-            <button className="ghost-button" onClick={openAddCallDrawer}>
-              Add Call
-            </button>
-          </div>
           <div className="calls-header">
             <div>
               <p className="content-kicker">Active calls</p>
@@ -9721,6 +9716,11 @@ export default function App() {
         <header className="content-header">
           <div className="content-heading-row">
             <h1 className="content-title">{activeLabel.toUpperCase()}</h1>
+            {activeTabId === "calls" && !isDrawerWindow && (
+              <button className="ghost-button header-add-call-button" onClick={openAddCallDrawer}>
+                Add Call
+              </button>
+            )}
           </div>
           {showHeaderActions && (
             <div className="content-search-row">

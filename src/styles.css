@@ -2769,7 +2769,8 @@ textarea {
 .content-heading-row {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .content-title {
@@ -2789,6 +2790,10 @@ textarea {
   display: flex;
   justify-content: flex-end;
   width: 100%;
+}
+
+.header-add-call-button {
+  margin-left: auto;
 }
 
 .global-search {
