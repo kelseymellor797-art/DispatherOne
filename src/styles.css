@@ -4,20 +4,20 @@
   line-height: 1.5;
   font-weight: 400;
 
-  --black: #0f0b1f;
-  --panel: #20163b;
-  --panel-border: rgba(198, 132, 255, 0.42);
-  --text: #f6eeff;
-  --muted: #b8a8d6;
-  --accent: #ff4fd8;
-  --accent-strong: #28d7ff;
-  --chip: rgba(78, 255, 184, 0.16);
-  --glow: rgba(255, 79, 216, 0.3);
+  --black: #060e21;
+  --panel: #0c1734;
+  --panel-border: rgba(58, 121, 255, 0.34);
+  --text: #eaf5ff;
+  --muted: #8ea8d3;
+  --accent: #ff4fb5;
+  --accent-strong: #22d3ff;
+  --chip: rgba(255, 199, 76, 0.16);
+  --glow: rgba(34, 211, 255, 0.28);
   --danger: #ff5a8f;
   --radius-lg: 24px;
   --radius-md: 14px;
   --radius-sm: 10px;
-  --shadow-soft: 0 22px 54px rgba(11, 6, 28, 0.68);
+  --shadow-soft: 0 24px 60px rgba(3, 10, 24, 0.72);
 }
 
 * {
@@ -35,10 +35,10 @@ body {
   margin: 0;
   min-height: 100vh;
   color: var(--text);
-  background: radial-gradient(circle at 14% 18%, rgba(78, 255, 184, 0.12), transparent 42%),
-    radial-gradient(circle at 83% 11%, rgba(176, 76, 255, 0.32), transparent 41%),
-    radial-gradient(circle at 52% 76%, rgba(40, 215, 255, 0.18), transparent 56%),
-    radial-gradient(circle at 72% 43%, rgba(255, 79, 216, 0.2), transparent 54%),
+  background: radial-gradient(circle at 14% 18%, rgba(34, 211, 255, 0.14), transparent 42%),
+    radial-gradient(circle at 83% 11%, rgba(255, 79, 181, 0.22), transparent 41%),
+    radial-gradient(circle at 52% 76%, rgba(80, 130, 255, 0.2), transparent 56%),
+    radial-gradient(circle at 72% 43%, rgba(255, 199, 76, 0.12), transparent 54%),
     var(--black);
   display: flex;
   justify-content: center;
@@ -2238,17 +2238,17 @@ body.floating-mode .content {
   }
 }
 
-/* Final Neo Night Lavender override block - placed at EOF to win cascade order. */
+/* Final Neon Dashboard override block - placed at EOF to win cascade order. */
 .app-shell {
-  background: linear-gradient(145deg, rgba(31, 20, 56, 0.92), rgba(19, 13, 39, 0.9));
-  border: 1px solid rgba(198, 132, 255, 0.46);
-  box-shadow: 0 0 0 1px rgba(40, 215, 255, 0.24), 0 0 48px rgba(255, 79, 216, 0.24), var(--shadow-soft);
+  background: linear-gradient(160deg, rgba(8, 16, 38, 0.92), rgba(6, 12, 28, 0.92));
+  border: 1px solid rgba(56, 117, 255, 0.44);
+  box-shadow: 0 0 0 1px rgba(34, 211, 255, 0.22), 0 0 46px rgba(255, 79, 181, 0.2), var(--shadow-soft);
 }
 
 .side-panel {
-  background: linear-gradient(170deg, rgba(37, 24, 66, 0.95), rgba(27, 19, 51, 0.92));
-  border-right: 1px solid rgba(198, 132, 255, 0.48);
-  box-shadow: inset -1px 0 0 rgba(40, 215, 255, 0.24);
+  background: linear-gradient(170deg, rgba(12, 24, 56, 0.95), rgba(9, 17, 40, 0.94));
+  border-right: 1px solid rgba(56, 117, 255, 0.46);
+  box-shadow: inset -1px 0 0 rgba(34, 211, 255, 0.18);
 }
 
 .panel-toggle,
@@ -2275,44 +2275,52 @@ body.floating-mode .content {
 .driver-status-select,
 .aaa-table td input[type="text"],
 .aaa-notes-input {
-  background: linear-gradient(135deg, rgba(44, 29, 76, 0.9), rgba(23, 28, 58, 0.88));
+  background: linear-gradient(145deg, rgba(13, 28, 64, 0.92), rgba(10, 18, 44, 0.9));
   color: var(--text);
-  border-color: rgba(198, 132, 255, 0.36);
-  box-shadow: 0 0 0 1px rgba(78, 255, 184, 0.12);
+  border-color: rgba(54, 112, 245, 0.4);
+  box-shadow: 0 0 0 1px rgba(34, 211, 255, 0.09);
 }
 
 .content {
-  background: linear-gradient(150deg, rgba(26, 18, 49, 0.56), rgba(20, 14, 39, 0.44));
+  background: linear-gradient(150deg, rgba(10, 19, 46, 0.58), rgba(8, 14, 34, 0.48));
+}
+
+.tab-index,
+.tab-icon,
+.panel-action,
+.shortcut-hint {
+  color: #7ec8ff;
 }
 
 .tab-button.is-active {
-  border-color: rgba(255, 79, 216, 0.6);
-  background: linear-gradient(135deg, rgba(255, 79, 216, 0.24), rgba(176, 76, 255, 0.3), rgba(40, 215, 255, 0.24));
-  box-shadow: 0 8px 24px rgba(176, 76, 255, 0.28), 0 0 20px rgba(255, 79, 216, 0.24);
+  border-color: rgba(255, 79, 181, 0.72);
+  background: linear-gradient(135deg, rgba(255, 79, 181, 0.28), rgba(73, 110, 255, 0.3), rgba(34, 211, 255, 0.24));
+  box-shadow: 0 8px 24px rgba(31, 105, 255, 0.28), 0 0 20px rgba(255, 79, 181, 0.22);
 }
 
 .ghost-button.is-active,
 .day-chip.is-selected {
-  border-color: rgba(78, 255, 184, 0.56);
-  background: linear-gradient(135deg, rgba(78, 255, 184, 0.24), rgba(40, 215, 255, 0.2));
+  border-color: rgba(255, 199, 76, 0.62);
+  background: linear-gradient(135deg, rgba(255, 199, 76, 0.24), rgba(255, 79, 181, 0.22));
   color: var(--text);
 }
 
 .primary-button {
-  border-color: rgba(176, 76, 255, 0.72);
-  background: linear-gradient(135deg, rgba(255, 79, 216, 0.94), rgba(176, 76, 255, 0.94), rgba(40, 215, 255, 0.9));
-  box-shadow: 0 10px 26px rgba(176, 76, 255, 0.34);
+  border-color: rgba(255, 79, 181, 0.72);
+  background: linear-gradient(135deg, rgba(255, 79, 181, 0.92), rgba(255, 199, 76, 0.94));
+  color: #1a1230;
+  box-shadow: 0 10px 28px rgba(255, 79, 181, 0.28);
 }
 
 .danger-button {
-  border-color: rgba(255, 90, 143, 0.46);
-  background: rgba(255, 90, 143, 0.16);
-  color: #ffb8cf;
+  border-color: rgba(255, 90, 143, 0.58);
+  background: rgba(255, 90, 143, 0.2);
+  color: #ffd0e1;
 }
 
 body.floating-mode {
-  background: radial-gradient(circle at 25% 15%, rgba(78, 255, 184, 0.14), transparent 42%),
-    radial-gradient(circle at 80% 20%, rgba(176, 76, 255, 0.28), transparent 44%),
-    radial-gradient(circle at 54% 74%, rgba(40, 215, 255, 0.16), transparent 48%),
+  background: radial-gradient(circle at 25% 15%, rgba(34, 211, 255, 0.14), transparent 42%),
+    radial-gradient(circle at 80% 20%, rgba(255, 79, 181, 0.22), transparent 44%),
+    radial-gradient(circle at 54% 74%, rgba(80, 130, 255, 0.16), transparent 48%),
     var(--black);
 }
