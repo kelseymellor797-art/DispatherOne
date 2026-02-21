@@ -825,6 +825,9 @@ export default function App() {
   const [toastVisible, setToastVisible] = useState(false);
   const toastTimerRef = useRef<number | null>(null);
   const ocrTextRef = useRef<HTMLTextAreaElement | null>(null);
+  const ocrCaptureRequestSeqRef = useRef(0);
+  const activeOcrCaptureRequestRef = useRef<number | null>(null);
+  const canceledOcrCaptureRequestsRef = useRef<Set<number>>(new Set());
   const pickupInputRef = useRef<HTMLInputElement | null>(null);
   const dropoffInputRef = useRef<HTMLInputElement | null>(null);
   const [completeLoading, setCompleteLoading] = useState<Record<string, boolean>>({});
@@ -2476,6 +2479,17 @@ export default function App() {
   useEffect(() => {
     const handleKeydown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        if (isAddCallOpen && ocrLoading) {
+          const activeRequestId = activeOcrCaptureRequestRef.current;
+          if (activeRequestId != null) {
+            canceledOcrCaptureRequestsRef.current.add(activeRequestId);
+          }
+          activeOcrCaptureRequestRef.current = null;
+          setOcrLoading(null);
+          setOcrNotice("OCR capture canceled. Press Ctrl + Shift + 1 or Ctrl + Shift + 2 to try again.");
+          showToast("OCR capture canceled.");
+          return;
+        }
         if (isAddEmployeeOpen) {
           setIsAddEmployeeOpen(false);
           return;
@@ -2574,7 +2588,7 @@ export default function App() {
 
     window.addEventListener("keydown", handleKeydown);
     return () => window.removeEventListener("keydown", handleKeydown);
-  }, [activeTabId, editingShift, isAddEmployeeOpen, isAddShiftOpen, isClearWeekOpen, isAddCallOpen]);
+  }, [activeTabId, editingShift, isAddEmployeeOpen, isAddShiftOpen, isClearWeekOpen, isAddCallOpen, ocrLoading]);
 
   useEffect(() => {
     if (!isAddShiftOpen) return;
@@ -3701,12 +3715,18 @@ export default function App() {
       alert("OCR upload is only available in the Tauri app.");
       return;
     }
+    const requestId = ++ocrCaptureRequestSeqRef.current;
+    activeOcrCaptureRequestRef.current = requestId;
     setOcrNotice(null);
     setOcrLoading(templateType === "ACE_PICKUP" ? "pickup" : "dropoff");
     try {
       const preview = (await invoke("ocr_capture_screenshot", {
         templateType,
       })) as OcrImportPreview;
+      if (canceledOcrCaptureRequestsRef.current.has(requestId)) {
+        canceledOcrCaptureRequestsRef.current.delete(requestId);
+        return;
+      }
       setOcrPreview(preview);
       setOcrImportIds((prev) => ({
         ...prev,
@@ -3718,9 +3738,16 @@ export default function App() {
       }
       openOcrConfirm(preview, templateType);
     } catch (error) {
+      if (canceledOcrCaptureRequestsRef.current.has(requestId)) {
+        canceledOcrCaptureRequestsRef.current.delete(requestId);
+        return;
+      }
       alert(error instanceof Error ? error.message : String(error));
     } finally {
-      setOcrLoading(null);
+      if (activeOcrCaptureRequestRef.current === requestId) {
+        activeOcrCaptureRequestRef.current = null;
+        setOcrLoading(null);
+      }
     }
   };
 
