@@ -4215,10 +4215,10 @@ export default function App() {
       }
       if (drawer) {
         const pos = await drawer.outerPosition();
+        const drawerSize = await drawer.outerSize();
         const panelSideSetting = localStorage.getItem(PANEL_SIDE_KEY);
         const side = panelSideSetting === "left" || panelSideSetting === "right" ? panelSideSetting : "right";
-        const drawerWidth =
-          drawerModeRef.current === "weekly-schedule" ? WEEKLY_SCHEDULE_DRAWER_WIDTH : WINDOW_WIDTH;
+        const drawerWidth = drawerSize.width;
         const targetX = side === "right" ? pos.x - drawerWidth : pos.x + drawerWidth;
         await animateWindowX(drawer, pos.x, targetX, pos.y);
         await drawer.close();
@@ -4282,15 +4282,31 @@ export default function App() {
       const pos = await win.outerPosition();
       const size = await win.outerSize();
       const height = size.height;
-      const drawerWidth = mode === "weekly-schedule" ? WEEKLY_SCHEDULE_DRAWER_WIDTH : WINDOW_WIDTH;
+      let drawerWidth = mode === "weekly-schedule" ? WEEKLY_SCHEDULE_DRAWER_WIDTH : WINDOW_WIDTH;
+      let monitorMinX: number | null = null;
+      let monitorMaxX: number | null = null;
+      try {
+        const monitor = (await monitorFromPoint(pos.x, pos.y)) ?? (await primaryMonitor());
+        if (monitor) {
+          const maxDrawerWidth = Math.max(560, monitor.size.width - 32);
+          drawerWidth = Math.min(drawerWidth, maxDrawerWidth);
+          monitorMinX = monitor.position.x;
+          monitorMaxX = monitor.position.x + monitor.size.width - drawerWidth;
+        }
+      } catch {
+        // fallback to default width
+      }
       const url = `${window.location.origin}?drawer=${mode}${
         callId ? `&callId=${encodeURIComponent(callId)}` : ""
       }${edit ? "&edit=1" : ""}`;
       const title = mode === "weekly-schedule" ? "Weekly Schedule" : "Call Details";
+      const rawTargetX = panelSide === "right" ? pos.x - drawerWidth : pos.x + size.width;
       const targetX =
-        panelSide === "right" ? pos.x - drawerWidth : pos.x + size.width;
-      const startX =
-        panelSide === "right" ? targetX - drawerWidth : targetX + drawerWidth;
+        monitorMinX != null && monitorMaxX != null
+          ? Math.max(monitorMinX, Math.min(monitorMaxX, rawTargetX))
+          : rawTargetX;
+      const slideOffset = mode === "weekly-schedule" ? 0 : drawerWidth;
+      const startX = panelSide === "right" ? targetX - slideOffset : targetX + slideOffset;
       if (drawer) {
         try {
           const maybeNavigate = (drawer as any).navigate;
@@ -4331,7 +4347,7 @@ export default function App() {
       });
       newDrawer.once("tauri://error", (event) => {
         console.error("Drawer window error", event);
-        alert("Failed to open the add call drawer window.");
+        alert("Failed to open the drawer window.");
       });
       newDrawer.once("tauri://created", async () => {
         await newDrawer.setSizeConstraints({
@@ -4350,7 +4366,7 @@ export default function App() {
       }
     } catch (err) {
       console.error("Failed to open drawer window", err);
-      alert("Failed to open the add call drawer window.");
+      alert("Failed to open the drawer window.");
     }
   };
 
@@ -4508,8 +4524,8 @@ export default function App() {
       const pos = await win.outerPosition();
       const size = await win.outerSize();
       const height = size.height;
-      const drawerWidth =
-        drawerModeRef.current === "weekly-schedule" ? WEEKLY_SCHEDULE_DRAWER_WIDTH : WINDOW_WIDTH;
+      const drawerSize = await drawer.outerSize();
+      const drawerWidth = drawerSize.width;
       const drawerX =
         panelSide === "right" ? pos.x - drawerWidth : pos.x + size.width;
       await drawer.setPosition(new LogicalPosition(drawerX, pos.y));
@@ -5026,8 +5042,38 @@ export default function App() {
                 </button>
               </div>
             </header>
+            <div className="schedule-toolbar">
+              <div>
+                <p className="content-kicker">Employee schedule</p>
+                <h2 className="schedule-title">Week of {weekLabel}</h2>
+              </div>
+              <div className="schedule-actions">
+                <button className="ghost-button" onClick={() => setIsAddEmployeeOpen(true)}>
+                  Add Driver
+                </button>
+                <button
+                  className="ghost-button"
+                  onClick={() => {
+                    if (scheduleDrivers.length > 0) {
+                      setDeleteEmployeeId(scheduleDrivers[0].id);
+                    } else {
+                      setDeleteEmployeeId("");
+                    }
+                    setIsDeleteEmployeeOpen(true);
+                  }}
+                >
+                  Delete Driver
+                </button>
+                <button className="ghost-button" onClick={() => setIsAddShiftOpen(true)}>
+                  Add Shift
+                </button>
+                <button className="ghost-button" onClick={handleClearWeek}>
+                  Clear week
+                </button>
+              </div>
+            </div>
             <section className="schedule-section">
-              <h2 className="schedule-title">Week of {weekLabel}</h2>
+              <h2 className="section-title">Drivers</h2>
               <div className="schedule-grid">
                 <div className="schedule-grid-header">
                   <div className="schedule-cell schedule-cell--head schedule-cell--corner">
@@ -8236,10 +8282,6 @@ export default function App() {
       "CALL_ACTIVE_REASSIGNED",
       "DRIVER_STATUS_CHANGED",
     ];
-    const weekStart = startOfWeek(new Date(nowMs));
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
-    const weekLabel = `${weekStart.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}`;
     contentBody = (
       <>
         <div className="hero-card">
@@ -8493,97 +8535,6 @@ export default function App() {
               </table>
             </div>
           )}
-        </section>
-
-        <section className="detail-card">
-          <div className="schedule-toolbar">
-            <div>
-              <p className="content-kicker">Employee schedule</p>
-              <h2 className="schedule-title">Week of {weekLabel}</h2>
-            </div>
-            <div className="schedule-actions">
-              <button className="ghost-button" onClick={() => setIsAddEmployeeOpen(true)}>
-                Add Driver
-              </button>
-              <button
-                className="ghost-button"
-                onClick={() => {
-                  if (scheduleDrivers.length > 0) {
-                    setDeleteEmployeeId(scheduleDrivers[0].id);
-                  } else {
-                    setDeleteEmployeeId("");
-                  }
-                  setIsDeleteEmployeeOpen(true);
-                }}
-              >
-                Delete Driver
-              </button>
-              <button className="ghost-button" onClick={() => setIsAddShiftOpen(true)}>
-                Add Shift
-              </button>
-              <button className="ghost-button" onClick={handleClearWeek}>
-                Clear week
-              </button>
-            </div>
-          </div>
-
-          <section className="schedule-section">
-            <h2 className="section-title">Drivers</h2>
-            <div className="schedule-grid">
-              <div className="schedule-grid-header">
-                <div className="schedule-cell schedule-cell--head schedule-cell--corner">
-                  Driver
-                </div>
-                {days.map((day) => (
-                  <div key={day} className="schedule-cell schedule-cell--head">
-                    {day}
-                  </div>
-                ))}
-              </div>
-              {scheduleLoading ? (
-                <div className="schedule-empty">Loading schedule???</div>
-              ) : scheduleError ? (
-                <div className="schedule-empty">{scheduleError}</div>
-              ) : scheduleDrivers.length === 0 ? (
-                <div className="schedule-empty">No drivers yet.</div>
-              ) : (
-                scheduleDrivers.map((employee) => (
-                  <div key={employee.id} className="schedule-row">
-                    <div className="schedule-cell schedule-cell--name">{employee.display_name}</div>
-                    {days.map((day) => {
-                      const dayIndex = days.indexOf(day);
-                      const targetDate = new Date(weekStart);
-                      targetDate.setDate(weekStart.getDate() + dayIndex);
-                      const shift = scheduleShiftLookup.get(`${employee.id}-${dateKey(targetDate)}`);
-                      return (
-                        <div key={day} className="schedule-cell">
-                          {shift ? (
-                            <button
-                              className="shift-block"
-                              onClick={() => {
-                                setEditingShift(shift);
-                                setEditDraft({
-                                  start: isoToTimeInput(shift.shift_start),
-                                  end: isoToTimeInput(shift.shift_end),
-                                  lunchStart: isoToTimeInput(shift.lunch_start),
-                                  lunchEnd: isoToTimeInput(shift.lunch_end),
-                                  lunchOverride: false,
-                                });
-                              }}
-                            >
-                              {formatIsoRange(shift.shift_start, shift.shift_end)}
-                            </button>
-                          ) : (
-                            <span className="shift-empty">???</span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
         </section>
 
         <section className="detail-card">
