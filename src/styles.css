@@ -2729,11 +2729,12 @@ textarea {
   backdrop-filter: blur(16px) saturate(155%) !important;
   -webkit-backdrop-filter: blur(16px) saturate(155%) !important;
   box-shadow:
-    inset 0 1px 0 rgba(238, 212, 255, 0.2),
-    inset 0 0 0 1px rgba(173, 104, 255, 0.18),
-    0 0 0 1px rgba(82, 27, 146, 0.78),
-    0 0 22px rgba(122, 45, 214, 0.34),
-    0 16px 30px rgba(8, 2, 18, 0.72) !important;
+    inset 0 1px 0 rgba(238, 212, 255, 0.28),
+    inset 0 0 0 1px rgba(173, 104, 255, 0.24),
+    0 0 0 1px rgba(82, 27, 146, 0.86),
+    0 0 30px rgba(122, 45, 214, 0.48),
+    0 0 54px rgba(186, 96, 255, 0.22),
+    0 18px 34px rgba(8, 2, 18, 0.74) !important;
 }
 
 .side-panel .tab-button.is-active {
