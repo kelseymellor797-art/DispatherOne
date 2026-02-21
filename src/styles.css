@@ -3099,6 +3099,8 @@ textarea {
 
 .add-call-card {
   gap: 10px !important;
+  align-content: start !important;
+  grid-template-rows: auto 1fr !important;
 }
 
 .add-call-card .modal-body {
