@@ -2681,6 +2681,17 @@ textarea {
     0 0 18px rgba(148, 72, 255, 0.3) !important;
 }
 
+.side-panel .panel-toggle {
+  padding: 4px 8px !important;
+  min-height: 18px !important;
+  font-size: 0.5rem !important;
+  border-radius: 8px !important;
+}
+
+.side-panel .tab-button {
+  min-height: 161px !important;
+}
+
 .panel-brand .brand-title,
 .panel-brand .brand-subtitle,
 .nav-collapsed .panel-brand .brand-title,
