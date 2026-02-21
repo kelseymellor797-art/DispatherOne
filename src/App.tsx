@@ -5095,7 +5095,7 @@ export default function App() {
     weekEnd.setDate(weekStart.getDate() + 6);
     const weekLabel = `${weekStart.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}`;
     return (
-      <div className="drawer-shell">
+      <div className={`drawer-shell${drawerMode === "weekly-schedule" ? " weekly-schedule-shell" : ""}`}>
         {drawerMode === "weekly-schedule" ? (
           <div className="detail-card call-detail-card weekly-schedule-drawer">
             <header className="call-detail-header">

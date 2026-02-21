@@ -3240,6 +3240,16 @@ textarea {
   max-width: none;
 }
 
+.weekly-schedule-shell {
+  overflow-x: auto !important;
+  overflow-y: auto !important;
+  padding: 12px !important;
+}
+
 .weekly-schedule-drawer {
   overflow-x: auto;
+  width: max-content;
+  min-width: 1088px;
+  margin-left: auto;
+  margin-right: 0;
 }
