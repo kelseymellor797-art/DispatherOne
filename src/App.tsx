@@ -2467,6 +2467,26 @@ export default function App() {
   }, [isTauri, isDrawerWindow, isAddCallOpen, callDraft.callType, ocrLoading]);
 
   useEffect(() => {
+    if (!isTauri) return;
+    if (!isDrawerWindow || drawerMode !== "weekly-schedule") return;
+    const applyWeeklyDrawerSize = async () => {
+      try {
+        const win = getCurrentWindow();
+        await win.setSize(new LogicalSize(WEEKLY_SCHEDULE_DRAWER_WIDTH, WEEKLY_SCHEDULE_DRAWER_HEIGHT));
+        await win.setSizeConstraints({
+          minWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
+          maxWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
+          minHeight: 400,
+          maxHeight: WEEKLY_SCHEDULE_DRAWER_HEIGHT,
+        });
+      } catch {
+        // Ignore window errors when not running in Tauri.
+      }
+    };
+    void applyWeeklyDrawerSize();
+  }, [isTauri, isDrawerWindow, drawerMode]);
+
+  useEffect(() => {
     if (isDrawerWindow) return;
     const win = getCurrentWindow();
     const setup = async () => {
@@ -4280,6 +4300,14 @@ export default function App() {
       try {
         drawer = await WebviewWindow.getByLabel(DRAWER_LABEL);
       } catch {
+        drawer = null;
+      }
+      if (mode === "weekly-schedule" && drawer) {
+        try {
+          await drawer.close();
+        } catch {
+          // ignore
+        }
         drawer = null;
       }
       const win = getCurrentWindow();
