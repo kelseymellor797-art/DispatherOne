@@ -2781,8 +2781,8 @@ textarea {
   text-transform: uppercase !important;
 }
 
-.content-kicker,
-.content-subtitle {
+.content-header .content-kicker,
+.content-header .content-subtitle {
   display: none !important;
 }
 
