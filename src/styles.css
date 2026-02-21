@@ -2216,7 +2216,7 @@ body.floating-mode .content {
 .drawer-card {
   width: 640px;
   max-width: 90vw;
-  height: 100%;
+  height: 25%;
   border-radius: 0;
   animation: slideIn 200ms ease-out;
   overflow-y: auto;
