@@ -2475,3 +2475,63 @@ body {
   color: #f8fbff;
   box-shadow: 0 12px 28px rgba(118, 94, 255, 0.4);
 }
+
+/* Hard override: force reference look to avoid subtle/no-op theme changes. */
+body {
+  background: radial-gradient(circle at 50% -10%, rgba(116, 107, 255, 0.42), transparent 45%),
+    radial-gradient(circle at 8% 85%, rgba(34, 211, 255, 0.2), transparent 52%),
+    radial-gradient(circle at 92% 18%, rgba(255, 79, 181, 0.22), transparent 48%),
+    #040716 !important;
+}
+
+.app-shell {
+  border-radius: 34px !important;
+  border: 2px solid rgba(114, 153, 255, 0.88) !important;
+  background: linear-gradient(165deg, rgba(9, 20, 54, 0.98), rgba(5, 11, 32, 0.98)) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(34, 211, 255, 0.26),
+    inset 0 0 38px rgba(88, 133, 255, 0.24),
+    0 0 26px rgba(34, 211, 255, 0.3),
+    0 0 58px rgba(255, 79, 181, 0.24),
+    0 20px 60px rgba(1, 4, 16, 0.8) !important;
+}
+
+.side-panel {
+  background: linear-gradient(170deg, rgba(12, 27, 66, 0.96), rgba(8, 17, 44, 0.96)) !important;
+  border-right: 1px solid rgba(87, 132, 255, 0.7) !important;
+}
+
+.content {
+  background: linear-gradient(160deg, rgba(10, 21, 54, 0.82), rgba(6, 14, 36, 0.74)) !important;
+}
+
+.tab-button,
+.panel-action,
+.ghost-button,
+.call-card,
+.driver-card,
+.pending-field,
+.hero-card,
+.modal-card,
+.drawer-card,
+.form-field input,
+.form-field select,
+.form-field textarea,
+.global-search input {
+  border: 1px solid rgba(96, 141, 255, 0.75) !important;
+  background: linear-gradient(150deg, rgba(14, 30, 72, 0.96), rgba(8, 18, 47, 0.95)) !important;
+  box-shadow: inset 0 0 0 1px rgba(34, 211, 255, 0.14), 0 10px 24px rgba(2, 7, 22, 0.58) !important;
+}
+
+.tab-button.is-active,
+.status-pill.is-active {
+  border-color: rgba(255, 79, 181, 0.95) !important;
+  background: linear-gradient(135deg, rgba(255, 79, 181, 0.42), rgba(106, 124, 255, 0.4), rgba(34, 211, 255, 0.34)) !important;
+  box-shadow: 0 0 24px rgba(255, 79, 181, 0.34), 0 0 18px rgba(34, 211, 255, 0.28) !important;
+}
+
+.primary-button {
+  border: 1px solid rgba(255, 79, 181, 0.96) !important;
+  background: linear-gradient(135deg, rgba(255, 79, 181, 0.98), rgba(120, 98, 255, 0.98), rgba(34, 211, 255, 0.94)) !important;
+  color: #f8fbff !important;
+}
