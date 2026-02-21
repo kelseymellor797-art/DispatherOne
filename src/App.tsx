@@ -5202,7 +5202,7 @@ export default function App() {
       <div className="drawer-shell">
         {drawerMode === "new-call" ? (
           <div className="detail-card call-detail-card">
-            <header className="call-detail-header">
+            <header className="call-detail-header add-call-header">
               <h3>Add Call</h3>
             </header>
 

@@ -3029,6 +3029,28 @@ textarea {
     0 0 18px rgba(57, 255, 20, 0.62) !important;
 }
 
+.add-call-card .modal-header h3,
+.add-call-header h3 {
+  font-size: 1.5rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.06em !important;
+}
+
+.add-call-source-row {
+  display: grid !important;
+  gap: 14px !important;
+}
+
+.add-call-source-label {
+  font-size: 0.95rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+}
+
+.add-call-source-field select {
+  width: 100% !important;
+}
+
 /* Calls window: normalize section spacing and increase by 15%. */
 .calls-layout .calls-main,
 .calls-layout .call-grid,
