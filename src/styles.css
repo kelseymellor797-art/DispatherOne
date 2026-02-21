@@ -3239,6 +3239,9 @@ textarea {
   width: 1060px !important;
   min-width: 1060px !important;
   max-width: 1060px !important;
+  padding-left: 5px !important;
+  padding-right: 5px !important;
+  box-sizing: content-box !important;
   margin-left: auto !important;
   margin-right: auto !important;
 }
@@ -3253,9 +3256,9 @@ textarea {
 
 .weekly-schedule-drawer {
   overflow-x: hidden !important;
-  width: 1060px !important;
-  min-width: 1060px !important;
-  max-width: 1060px !important;
+  width: 1070px !important;
+  min-width: 1070px !important;
+  max-width: 1070px !important;
   padding: 0 !important;
   box-sizing: border-box !important;
   margin-left: auto !important;
@@ -3267,8 +3270,8 @@ textarea {
 .weekly-schedule-drawer .call-detail-header,
 .weekly-schedule-drawer .schedule-toolbar,
 .weekly-schedule-drawer .schedule-section {
-  width: 1060px !important;
-  max-width: 1060px !important;
+  width: 1070px !important;
+  max-width: 1070px !important;
   margin-left: auto !important;
   margin-right: auto !important;
 }
