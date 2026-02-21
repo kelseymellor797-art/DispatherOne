@@ -2645,15 +2645,12 @@ textarea {
 }
 
 .side-panel {
-  padding: 8px 10px 14px !important;
+  padding: 16px 10px 14px !important;
   gap: 12px !important;
 }
 
 .panel-header {
   gap: 10px !important;
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  margin-top: -75% !important;
 }
 
 .brand-title {
@@ -2744,22 +2741,14 @@ textarea {
 }
 
 .tab-nav {
-  display: flex !important;
-  flex-direction: column !important;
   gap: 18px !important;
   margin-left: 0 !important;
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  align-content: stretch !important;
 }
 
 .tab-button {
   padding: 24px 8px !important;
   gap: 4px !important;
   border-radius: 10px !important;
-  min-height: 0 !important;
-  height: 100% !important;
-  flex: 1 1 0 !important;
 }
 
 .tab-label {
