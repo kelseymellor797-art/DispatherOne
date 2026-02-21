@@ -2759,7 +2759,7 @@ textarea {
 .content-header {
   display: grid !important;
   grid-template-columns: 1fr !important;
-  gap: 10px !important;
+  gap: 20px !important;
   padding: 0 !important;
   border: none !important;
   background: transparent !important;
