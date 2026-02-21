@@ -2507,38 +2507,28 @@ export default function App() {
   useEffect(() => {
     const handleKeydown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        if (isAddCallOpen && ocrLoading) {
-          const activeRequestId = activeOcrCaptureRequestRef.current;
-          if (activeRequestId != null) {
-            canceledOcrCaptureRequestsRef.current.add(activeRequestId);
+        if (isDrawerWindow || isFloatingWindow || isReportWindow) {
+          event.preventDefault();
+          if (isTauri) {
+            void (async () => {
+              try {
+                await emit("drawer-closed");
+              } catch {
+                // ignore
+              }
+              try {
+                const win = getCurrentWindow();
+                await win.close();
+              } catch {
+                // ignore
+              }
+            })();
+          } else {
+            window.close();
           }
-          activeOcrCaptureRequestRef.current = null;
-          setOcrLoading(null);
-          setOcrNotice("OCR capture canceled. Press Ctrl + Shift + 1 or Ctrl + Shift + 2 to try again.");
-          showToast("OCR capture canceled.");
           return;
         }
-        if (isAddEmployeeOpen) {
-          setIsAddEmployeeOpen(false);
-          return;
-        }
-        if (isAddShiftOpen) {
-          setIsAddShiftOpen(false);
-          return;
-        }
-        if (isClearWeekOpen) {
-          setIsClearWeekOpen(false);
-          return;
-        }
-        if (isAddCallOpen) {
-          setIsAddCallOpen(false);
-          void closeDrawerWindow();
-          return;
-        }
-        if (editingShift) {
-          setEditingShift(null);
-          return;
-        }
+        return;
       }
 
       if (!(event.ctrlKey || event.metaKey)) return;
@@ -2616,7 +2606,7 @@ export default function App() {
 
     window.addEventListener("keydown", handleKeydown);
     return () => window.removeEventListener("keydown", handleKeydown);
-  }, [activeTabId, editingShift, isAddEmployeeOpen, isAddShiftOpen, isClearWeekOpen, isAddCallOpen, ocrLoading]);
+  }, [activeTabId, isDrawerWindow, isFloatingWindow, isReportWindow, isTauri]);
 
   useEffect(() => {
     if (!isAddShiftOpen) return;
