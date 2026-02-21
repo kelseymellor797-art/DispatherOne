@@ -5129,10 +5129,27 @@ export default function App() {
     weekEnd.setDate(weekStart.getDate() + 6);
     const weekLabel = `${weekStart.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}`;
     return (
-      <div className={`drawer-shell${drawerMode === "weekly-schedule" ? " weekly-schedule-shell" : ""}`}>
+      <div
+        className={`drawer-shell${drawerMode === "weekly-schedule" ? " weekly-schedule-shell" : ""}`}
+        style={
+          drawerMode === "weekly-schedule"
+            ? { padding: 0, overflowX: "hidden", overflowY: "auto" }
+            : undefined
+        }
+      >
         {drawerMode === "weekly-schedule" ? (
-          <div className="detail-card call-detail-card weekly-schedule-drawer">
-            <header className="call-detail-header">
+          <div
+            className="detail-card call-detail-card weekly-schedule-drawer"
+            style={{
+              width: 1070,
+              minWidth: 1070,
+              maxWidth: 1070,
+              padding: 0,
+              marginLeft: "auto",
+              marginRight: "auto",
+            }}
+          >
+            <header className="call-detail-header" style={{ width: 1060, margin: "0 auto" }}>
               <h3>Weekly Schedule</h3>
               <div className="call-detail-actions">
                 <button className="ghost-button" onClick={() => void closeDrawerWindow()}>
@@ -5140,7 +5157,7 @@ export default function App() {
                 </button>
               </div>
             </header>
-            <div className="schedule-toolbar">
+            <div className="schedule-toolbar" style={{ width: 1060, margin: "0 auto" }}>
               <div>
                 <p className="content-kicker">Employee schedule</p>
                 <h2 className="schedule-title">Week of {weekLabel}</h2>
@@ -5170,9 +5187,12 @@ export default function App() {
                 </button>
               </div>
             </div>
-            <section className="schedule-section">
+            <section className="schedule-section" style={{ width: 1060, margin: "24px auto 0" }}>
               <h2 className="section-title">Drivers</h2>
-              <div className="schedule-grid weekly-schedule-grid">
+              <div
+                className="schedule-grid weekly-schedule-grid"
+                style={{ width: 1060, minWidth: 1060, maxWidth: 1060, margin: "0 auto" }}
+              >
                 <div className="schedule-grid-header">
                   <div className="schedule-cell schedule-cell--head schedule-cell--corner">
                     Driver
