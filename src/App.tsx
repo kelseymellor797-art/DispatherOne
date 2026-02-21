@@ -9666,8 +9666,10 @@ export default function App() {
             Hide panel
           </div>
           <div className="panel-brand">
-            <span className="brand-title">DispatcherOne</span>
-            <span className="brand-subtitle">Made by: Kelsey Mellor</span>
+            <span className="brand-title">Dispatcher</span>
+            <span className="brand-title">One</span>
+            <span className="brand-subtitle">Made by:</span>
+            <span className="brand-subtitle">Kelsey Mellor</span>
           </div>
         </div>
 
