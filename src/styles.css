@@ -3235,10 +3235,10 @@ textarea {
 
 /* Weekly schedule drawer: keep grid at native size while allowing wider window. */
 .weekly-schedule-drawer .weekly-schedule-grid {
-  grid-template-columns: 220px repeat(7, 120px) !important;
-  width: 1060px !important;
-  min-width: 1060px !important;
-  max-width: 1060px !important;
+  grid-template-columns: 154px repeat(7, 84px) !important;
+  width: 742px !important;
+  min-width: 742px !important;
+  max-width: 742px !important;
   margin-left: auto !important;
   margin-right: auto !important;
 }
@@ -3267,8 +3267,8 @@ textarea {
 .weekly-schedule-drawer .call-detail-header,
 .weekly-schedule-drawer .schedule-toolbar,
 .weekly-schedule-drawer .schedule-section {
-  width: 1060px !important;
-  max-width: 1060px !important;
+  width: 742px !important;
+  max-width: 742px !important;
   margin-left: auto !important;
   margin-right: auto !important;
 }
