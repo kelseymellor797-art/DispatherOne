@@ -514,50 +514,6 @@ const extractNoteValue = (notes: string | null | undefined, label: string) => {
   return match ? match[1].trim() : null;
 };
 
-const extractCallNumberFromOcrText = (rawText: string | null | undefined) => {
-  if (!rawText) return "";
-  const lines = rawText.split(/\r?\n/);
-  for (let i = 0; i < lines.length; i += 1) {
-    const line = lines[i];
-    const lower = line.toLowerCase();
-    if (
-      lower.includes("call #") ||
-      lower.includes("call no") ||
-      lower.includes("call number") ||
-      lower.includes("call id") ||
-      lower.includes("call 1d")
-    ) {
-      const sameLineDigits = line.replace(/\D/g, "");
-      if (sameLineDigits.length >= 4) return sameLineDigits;
-      for (let j = i + 1; j < Math.min(lines.length, i + 3); j += 1) {
-        const nextDigits = lines[j].replace(/\D/g, "");
-        if (nextDigits.length >= 4) return nextDigits;
-      }
-    }
-  }
-  const slashMatch = rawText.match(/\/\s*(\d{5,})\b/);
-  if (slashMatch) return slashMatch[1];
-  return "";
-};
-
-const extractPtaFromOcrText = (rawText: string | null | undefined) => {
-  if (!rawText) return "";
-  const lines = rawText.split(/\r?\n/);
-  const timeRe = /\b(\d{1,2})[:\s]?(\d{2})?\s*([AaPp][Mm])\b/;
-  for (const line of lines) {
-    const lower = line.toLowerCase();
-    if (lower.includes("pta") || lower.includes("p t a") || lower.includes("p.t.a")) {
-      const match = line.match(timeRe);
-      if (!match) continue;
-      const hour = match[1];
-      const minute = match[2] ?? "00";
-      const meridiem = match[3].toUpperCase();
-      return `${hour}:${minute} ${meridiem}`;
-    }
-  }
-  return "";
-};
-
 const upsertNoteValue = (notes: string | null | undefined, label: string, value: string) => {
   const trimmed = value.trim();
   const parts = (notes ?? "")
@@ -3595,21 +3551,19 @@ export default function App() {
       applyDropoff?: boolean;
     }
   ) => {
-    const fallbackCallNumber = extractCallNumberFromOcrText(preview.raw_text);
-    const fallbackPta = extractPtaFromOcrText(preview.raw_text);
     const applyPickup = options?.applyPickup ?? true;
     const applyDropoff = options?.applyDropoff ?? true;
     const pickupAddress = applyPickup ? (options?.pickupAddress ?? preview.pickup_address) : null;
     const dropoffAddress = applyDropoff ? (options?.dropoffAddress ?? preview.dropoff_address) : null;
     setCallDraft((prev) => ({
       ...prev,
-      callNumber: preview.call_number || fallbackCallNumber || prev.callNumber,
+      callNumber: preview.call_number || prev.callNumber,
       workType: preview.work_type_id || prev.workType,
       vehicleType: preview.vehicle_name ? preview.vehicle_name.replace(/\s+\b[A-Z]{1,2}\b\s*$/, "") : prev.vehicleType,
       coverage: preview.membership_level || prev.coverage,
       pickupLocation: pickupAddress ? pickupAddress.trim() : prev.pickupLocation,
       dropoffLocation: dropoffAddress ? dropoffAddress.trim() : prev.dropoffLocation,
-      pta: preview.pta || fallbackPta || prev.pta,
+      pta: preview.pta || prev.pta,
       contactId: preview.contact_id || prev.contactId,
       memberPhone: preview.phone_number || prev.memberPhone,
       inTowEta: preview.in_tow_eta || prev.inTowEta,
