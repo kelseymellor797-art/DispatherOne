@@ -4230,6 +4230,12 @@ export default function App() {
 
   const closeDrawerWindow = async () => {
     try {
+      if (isDrawerWindow) {
+        await emit("drawer-closed");
+        const win = getCurrentWindow();
+        await win.close();
+        return;
+      }
       await emit("drawer-closed");
       let drawer: WebviewWindow | null = null;
       try {
