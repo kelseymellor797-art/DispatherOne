@@ -517,8 +517,8 @@ const extractNoteValue = (notes: string | null | undefined, label: string) => {
 const extractCallNumberFromOcrText = (rawText: string | null | undefined) => {
   if (!rawText) return "";
   const lines = rawText.split(/\r?\n/);
-  const labelAndNumberRe = /call\s*(?:#|no\.?|number|id|1d)?\s*[:\-]?\s*([0-9]{4,})/i;
-  const callTokenRe = /\b(?:[A-Z]{1,3}-\d+|SA-\d+)\s*\/\s*([0-9]{5,})\b/i;
+  const labelAndNumberRe = /call\s*(?:#|no\.?|number|id|1d)?\s*[:\-]?\s*([0-9]{4,10})/i;
+  const callTokenRe = /\b(?:[A-Z]{1,3}-\d+|SA-\d+)\s*\/\s*([0-9]{4,10})\b/i;
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
     const lower = line.toLowerCase();
@@ -533,20 +533,19 @@ const extractCallNumberFromOcrText = (rawText: string | null | undefined) => {
       lower.includes("call id") ||
       lower.includes("call 1d")
     ) {
-      const sameLineDigits = line.replace(/\D/g, "");
-      if (sameLineDigits.length >= 4) return sameLineDigits;
+      const sameLineDigitsMatch = line.match(/\b(\d{4,10})\b/);
+      if (sameLineDigitsMatch?.[1]) return sameLineDigitsMatch[1];
       for (let j = i + 1; j < Math.min(lines.length, i + 3); j += 1) {
-        const nextDigits = lines[j].replace(/\D/g, "");
-        if (nextDigits.length >= 4) return nextDigits;
+        const nextLine = lines[j].trim();
+        const nextDigitsMatch = nextLine.match(/^\D*(\d{4,10})\D*$/);
+        if (nextDigitsMatch?.[1]) return nextDigitsMatch[1];
       }
     }
   }
-  const slashMatch = rawText.match(/\/\s*(\d{4,})\b/);
-  if (slashMatch) return slashMatch[1];
-  const globalCallMatch = rawText.match(labelAndNumberRe);
-  if (globalCallMatch?.[1]) return globalCallMatch[1];
-  const compactDigits = rawText.match(/\b(\d{4,})\b/g);
-  if (compactDigits && compactDigits.length > 0) return compactDigits[0];
+  const tokenMatch = rawText.match(callTokenRe);
+  if (tokenMatch?.[1]) return tokenMatch[1];
+  const slashAfterCallMatch = rawText.match(/call[^\n\r/]*\/\s*([0-9]{4,10})\b/i);
+  if (slashAfterCallMatch?.[1]) return slashAfterCallMatch[1];
   return "";
 };
 
