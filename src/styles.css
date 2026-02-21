@@ -2637,7 +2637,7 @@ textarea {
   height: 100% !important;
   margin: 0 !important;
   border-radius: 18px !important;
-  grid-template-columns: 124px minmax(0, 1fr) !important;
+  grid-template-columns: 136px minmax(0, 1fr) !important;
 }
 
 .app-shell--single {
