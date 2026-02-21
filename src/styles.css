@@ -2665,12 +2665,12 @@ textarea {
 }
 
 .tab-nav {
-  gap: 12px !important;
+  gap: 18px !important;
   margin-left: 0 !important;
 }
 
 .tab-button {
-  padding: 14px 8px !important;
+  padding: 24px 8px !important;
   gap: 4px !important;
   border-radius: 10px !important;
 }
@@ -2756,11 +2756,11 @@ textarea {
 }
 
 .panel-footer {
-  gap: 18px !important;
+  gap: 27px !important;
 }
 
 .side-panel .panel-action {
-  padding: 14px 10px !important;
+  padding: 24px 10px !important;
 }
 
 /* Header layout cleanup requested: title only + separate search row. */
