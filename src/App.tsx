@@ -5982,11 +5982,17 @@ export default function App() {
                         const isSelected = selectedPendingCallIds.has(call.call_id);
                         const workTypeId =
                           extractNoteValue(call.notes, "Work Type ID") ??
+                          extractNoteValue(call.notes, "Work Type 1D") ??
+                          extractNoteValue(call.notes, "Work Type lD") ??
+                          extractNoteValue(call.notes, "WorkTypeID") ??
                           extractNoteValue(call.notes, "Work Type") ??
                           "--";
                         const carTypeText =
                           call.vehicle_description?.trim() ||
                           extractNoteValue(call.notes, "Car Type") ||
+                          extractNoteValue(call.notes, "Member Vehicle Name") ||
+                          extractNoteValue(call.notes, "Member Vehicle") ||
+                          extractNoteValue(call.notes, "Vehicle Name") ||
                           extractNoteValue(call.notes, "Vehicle Type") ||
                           extractNoteValue(call.notes, "Vehicle") ||
                           "--";
