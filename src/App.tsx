@@ -517,15 +517,9 @@ const extractNoteValue = (notes: string | null | undefined, label: string) => {
 const extractCallNumberFromOcrText = (rawText: string | null | undefined) => {
   if (!rawText) return "";
   const lines = rawText.split(/\r?\n/);
-  const labelAndNumberRe = /call\s*(?:#|no\.?|number|id|1d)?\s*[:\-]?\s*([0-9]{4,})/i;
-  const callTokenRe = /\b(?:[A-Z]{1,3}-\d+|SA-\d+)\s*\/\s*([0-9]{5,})\b/i;
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
     const lower = line.toLowerCase();
-    const labelInline = line.match(labelAndNumberRe);
-    if (labelInline?.[1]) return labelInline[1];
-    const tokenInline = line.match(callTokenRe);
-    if (tokenInline?.[1]) return tokenInline[1];
     if (
       lower.includes("call #") ||
       lower.includes("call no") ||
@@ -541,12 +535,8 @@ const extractCallNumberFromOcrText = (rawText: string | null | undefined) => {
       }
     }
   }
-  const slashMatch = rawText.match(/\/\s*(\d{4,})\b/);
+  const slashMatch = rawText.match(/\/\s*(\d{5,})\b/);
   if (slashMatch) return slashMatch[1];
-  const globalCallMatch = rawText.match(labelAndNumberRe);
-  if (globalCallMatch?.[1]) return globalCallMatch[1];
-  const compactDigits = rawText.match(/\b(\d{4,})\b/g);
-  if (compactDigits && compactDigits.length > 0) return compactDigits[0];
   return "";
 };
 
