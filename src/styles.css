@@ -18,6 +18,9 @@
   --radius-md: 14px;
   --radius-sm: 10px;
   --shadow-soft: 0 24px 60px rgba(3, 10, 24, 0.72);
+  --weekly-grid-width: 1060px;
+  --weekly-grid-gap: 0.5rem;
+  --weekly-drawer-width: calc(var(--weekly-grid-width) + var(--weekly-grid-gap) * 2);
 }
 
 * {
@@ -3236,16 +3239,15 @@ textarea {
 /* Weekly schedule drawer: keep grid at native size while allowing wider window. */
 .weekly-schedule-drawer .weekly-schedule-grid {
   grid-template-columns: 220px repeat(7, 120px) !important;
-  width: 1060px !important;
-  min-width: 1060px !important;
-  max-width: 1060px !important;
-  margin-left: auto !important;
-  margin-right: auto !important;
+  width: var(--weekly-grid-width) !important;
+  min-width: var(--weekly-grid-width) !important;
+  max-width: var(--weekly-grid-width) !important;
+  margin: var(--weekly-grid-gap) auto !important;
 }
 
 .weekly-schedule-shell {
   overflow-x: hidden !important;
-  overflow-y: auto !important;
+  overflow-y: hidden !important;
   padding: 0 !important;
   width: 100% !important;
   min-width: 0 !important;
@@ -3253,9 +3255,9 @@ textarea {
 
 .weekly-schedule-drawer {
   overflow-x: hidden !important;
-  width: 1070px !important;
-  min-width: 1070px !important;
-  max-width: 1070px !important;
+  width: var(--weekly-drawer-width) !important;
+  min-width: var(--weekly-drawer-width) !important;
+  max-width: var(--weekly-drawer-width) !important;
   padding: 0 !important;
   box-sizing: border-box !important;
   margin-left: auto !important;
@@ -3265,10 +3267,16 @@ textarea {
 }
 
 .weekly-schedule-drawer .call-detail-header,
-.weekly-schedule-drawer .schedule-toolbar,
+.weekly-schedule-drawer .schedule-toolbar {
+  width: var(--weekly-grid-width) !important;
+  max-width: var(--weekly-grid-width) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
 .weekly-schedule-drawer .schedule-section {
-  width: 1070px !important;
-  max-width: 1070px !important;
+  width: var(--weekly-drawer-width) !important;
+  max-width: var(--weekly-drawer-width) !important;
   margin-left: auto !important;
   margin-right: auto !important;
 }

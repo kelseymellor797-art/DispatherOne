@@ -656,14 +656,20 @@ const PANEL_SIDE_KEY = "dispatcherone.panelSide";
 const ALWAYS_ON_TOP_KEY = "dispatcherone.alwaysOnTop";
 const NAV_COLLAPSED_KEY = "dispatcherone.navCollapsed";
 const WINDOW_WIDTH = 640;
-const WEEKLY_SCHEDULE_BASE_WIDTH = 1070;
-const WEEKLY_SCHEDULE_DRAWER_WIDTH = 1070;
+const WEEKLY_SCHEDULE_GRID_WIDTH = 1060;
+const WEEKLY_SCHEDULE_GRID_MARGIN = 8;
+const WEEKLY_SCHEDULE_DRAWER_WIDTH = WEEKLY_SCHEDULE_GRID_WIDTH + WEEKLY_SCHEDULE_GRID_MARGIN * 2;
+const WEEKLY_SCHEDULE_BASE_WIDTH = WEEKLY_SCHEDULE_DRAWER_WIDTH;
 const WEEKLY_SCHEDULE_DRAWER_HEIGHT = 760;
 const WEEKLY_SCHEDULE_Y_OFFSET = 84;
 const DRAWER_SCREEN_MARGIN = 16;
 const WINDOW_HEIGHT = 900;
 const ADD_CALL_DEFAULT_HEIGHT = 746.14;
 const DRAWER_LABEL = "drawer";
+const isEscapeKey = (event: KeyboardEvent): boolean =>
+  event.key === "Escape" || event.key === "Esc" || event.code === "Escape";
+const isEscapeReactEvent = (event: React.KeyboardEvent): boolean =>
+  event.key === "Escape" || event.key === "Esc" || event.code === "Escape";
 const FISH_WILDLIFE_TOW_FEE = 210;
 const FISH_WILDLIFE_STORAGE_DAILY = 40;
 const FISH_WILDLIFE_GATE_FEE = 105;
@@ -2522,21 +2528,40 @@ export default function App() {
     window.close();
   }, [isTauri]);
 
+  const handleNonMainEscapeCapture = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (!(isDrawerWindow || isFloatingWindow || isReportWindow)) return;
+      if (!isEscapeReactEvent(event)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      void closeCurrentNonMainWindow();
+    },
+    [isDrawerWindow, isFloatingWindow, isReportWindow, closeCurrentNonMainWindow]
+  );
+
   useEffect(() => {
     if (!(isDrawerWindow || isFloatingWindow || isReportWindow)) return;
     const onEscapeCapture = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
+      if (!isEscapeKey(event)) return;
       event.preventDefault();
       event.stopPropagation();
       void closeCurrentNonMainWindow();
     };
     document.addEventListener("keydown", onEscapeCapture, true);
-    return () => document.removeEventListener("keydown", onEscapeCapture, true);
+    document.addEventListener("keyup", onEscapeCapture, true);
+    window.addEventListener("keydown", onEscapeCapture, true);
+    window.addEventListener("keyup", onEscapeCapture, true);
+    return () => {
+      document.removeEventListener("keydown", onEscapeCapture, true);
+      document.removeEventListener("keyup", onEscapeCapture, true);
+      window.removeEventListener("keydown", onEscapeCapture, true);
+      window.removeEventListener("keyup", onEscapeCapture, true);
+    };
   }, [isDrawerWindow, isFloatingWindow, isReportWindow, closeCurrentNonMainWindow]);
 
   useEffect(() => {
     const handleKeydown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") return;
+      if (isEscapeKey(event)) return;
 
       if (!(event.ctrlKey || event.metaKey)) return;
       if (event.altKey) return;
@@ -2839,13 +2864,15 @@ export default function App() {
   useEffect(() => {
     if (!floatingDetail) return;
     const handleKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
+      if (isEscapeKey(event)) {
         closeFloatingDetail();
       }
     };
     window.addEventListener("keydown", handleKey);
+    window.addEventListener("keyup", handleKey);
     return () => {
       window.removeEventListener("keydown", handleKey);
+      window.removeEventListener("keyup", handleKey);
     };
   }, [floatingDetail, closeFloatingDetail]);
 
@@ -5123,12 +5150,15 @@ export default function App() {
     return (
       <div
         className={`drawer-shell${drawerMode === "weekly-schedule" ? " weekly-schedule-shell" : ""}`}
+        onKeyDownCapture={handleNonMainEscapeCapture}
+        onKeyUpCapture={handleNonMainEscapeCapture}
+        tabIndex={-1}
         style={
           drawerMode === "weekly-schedule"
             ? {
                 padding: 0,
                 overflowX: "hidden",
-                overflowY: "auto",
+                overflowY: "hidden",
                 width: WEEKLY_SCHEDULE_DRAWER_WIDTH,
                 minWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
                 maxWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
@@ -5141,15 +5171,15 @@ export default function App() {
           <div
             className="detail-card call-detail-card weekly-schedule-drawer"
             style={{
-              width: 1070,
-              minWidth: 1070,
-              maxWidth: 1070,
+              width: WEEKLY_SCHEDULE_DRAWER_WIDTH,
+              minWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
+              maxWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
               padding: 0,
               marginLeft: "auto",
               marginRight: "auto",
             }}
           >
-            <header className="call-detail-header" style={{ width: 1060, margin: "0 auto" }}>
+            <header className="call-detail-header" style={{ width: WEEKLY_SCHEDULE_GRID_WIDTH, margin: "0 auto" }}>
               <h3>Weekly Schedule</h3>
               <div className="call-detail-actions">
                 <button className="ghost-button" onClick={() => void closeDrawerWindow()}>
@@ -5157,7 +5187,7 @@ export default function App() {
                 </button>
               </div>
             </header>
-            <div className="schedule-toolbar" style={{ width: 1060, margin: "0 auto" }}>
+            <div className="schedule-toolbar" style={{ width: WEEKLY_SCHEDULE_GRID_WIDTH, margin: "0 auto" }}>
               <div>
                 <p className="content-kicker">Employee schedule</p>
                 <h2 className="schedule-title">Week of {weekLabel}</h2>
@@ -5187,11 +5217,23 @@ export default function App() {
                 </button>
               </div>
             </div>
-            <section className="schedule-section" style={{ width: 1060, margin: "24px auto 0" }}>
+            <section
+              className="schedule-section"
+              style={{
+                width: WEEKLY_SCHEDULE_DRAWER_WIDTH,
+                margin: `${WEEKLY_SCHEDULE_GRID_MARGIN}px auto`,
+                padding: 0,
+              }}
+            >
               <h2 className="section-title">Drivers</h2>
               <div
                 className="schedule-grid weekly-schedule-grid"
-                style={{ width: 1060, minWidth: 1060, maxWidth: 1060, margin: "0 auto" }}
+                style={{
+                  width: WEEKLY_SCHEDULE_GRID_WIDTH,
+                  minWidth: WEEKLY_SCHEDULE_GRID_WIDTH,
+                  maxWidth: WEEKLY_SCHEDULE_GRID_WIDTH,
+                  margin: `${WEEKLY_SCHEDULE_GRID_MARGIN}px auto`,
+                }}
               >
                 <div className="schedule-grid-header">
                   <div className="schedule-cell schedule-cell--head schedule-cell--corner">
@@ -9386,7 +9428,12 @@ export default function App() {
   }
 
   return (
-    <div className={`app-shell${showNavigation ? "" : " app-shell--single"}`}>
+    <div
+      className={`app-shell${showNavigation ? "" : " app-shell--single"}`}
+      onKeyDownCapture={handleNonMainEscapeCapture}
+      onKeyUpCapture={handleNonMainEscapeCapture}
+      tabIndex={isFloatingWindow || isReportWindow ? -1 : undefined}
+    >
       {toastMessage && (
         <div className={`app-toast${toastVisible ? " is-visible" : ""}`}>{toastMessage}</div>
       )}
