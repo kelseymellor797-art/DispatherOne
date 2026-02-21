@@ -4326,7 +4326,13 @@ export default function App() {
           setIsAddCallOpen(false);
           return;
         } catch {
-          // Fall through to recreate the window if navigation fails.
+          // If a stale drawer instance cannot navigate, close it before recreating by label.
+          try {
+            await drawer.close();
+          } catch {
+            // ignore
+          }
+          drawer = null;
         }
       }
       const newDrawer = new WebviewWindow(DRAWER_LABEL, {
@@ -8601,7 +8607,9 @@ export default function App() {
             </div>
           <div className="driver-grid">
             {dashboardDrivers.filter((driver) => driver.availability_status !== "ON_LUNCH").length === 0 ? (
-              <div className="driver-empty">No active drivers scheduled for today.</div>
+              <div className="driver-empty">
+                No active drivers scheduled for today. Use Weekly Schedule to add shifts.
+              </div>
             ) : (
               dashboardDrivers
                 .filter((driver) => driver.availability_status !== "ON_LUNCH")
@@ -9075,7 +9083,7 @@ export default function App() {
             <span className="driver-section-meta">{shiftsTodayBackend.length} shifts</span>
           </div>
           {shiftsTodayBackend.length === 0 ? (
-            <div className="driver-empty">No shifts scheduled for today.</div>
+            <div className="driver-empty">No shifts scheduled for today. Open Weekly Schedule.</div>
           ) : null}
         </section>
       </>
