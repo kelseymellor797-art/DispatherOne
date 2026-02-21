@@ -2403,3 +2403,75 @@ body.floating-mode {
   border-color: rgba(255, 79, 181, 0.72);
   box-shadow: 0 0 0 1px rgba(255, 79, 181, 0.28), 0 0 20px rgba(34, 211, 255, 0.2);
 }
+
+/* Reference image match pass: cobalt-violet frame + neon cyan/pink modules. */
+body {
+  background: radial-gradient(circle at 50% 10%, rgba(82, 107, 255, 0.24), transparent 45%),
+    radial-gradient(circle at 10% 80%, rgba(34, 211, 255, 0.14), transparent 50%),
+    radial-gradient(circle at 90% 20%, rgba(255, 79, 181, 0.16), transparent 46%),
+    #050a1a;
+}
+
+.app-shell {
+  border-radius: 30px;
+  border: 1px solid rgba(99, 133, 255, 0.62);
+  background: linear-gradient(165deg, rgba(10, 19, 49, 0.96), rgba(7, 12, 34, 0.96));
+  box-shadow:
+    inset 0 0 0 1px rgba(34, 211, 255, 0.18),
+    inset 0 0 28px rgba(80, 130, 255, 0.2),
+    0 0 40px rgba(34, 211, 255, 0.2),
+    0 0 56px rgba(255, 79, 181, 0.16),
+    var(--shadow-soft);
+}
+
+.side-panel,
+.content {
+  background: linear-gradient(165deg, rgba(11, 21, 54, 0.9), rgba(8, 14, 38, 0.86));
+}
+
+.tab-button,
+.panel-action,
+.ghost-button,
+.call-card,
+.driver-card,
+.pending-field,
+.hero-card,
+.modal-card,
+.drawer-card {
+  border-radius: 16px;
+  border: 1px solid rgba(87, 130, 255, 0.5);
+  background: linear-gradient(150deg, rgba(13, 28, 70, 0.92), rgba(9, 18, 46, 0.92));
+  box-shadow: inset 0 0 0 1px rgba(34, 211, 255, 0.14), 0 12px 26px rgba(4, 9, 26, 0.45);
+}
+
+.content-header,
+.calls-header,
+.driver-section-header {
+  border-radius: 16px;
+  border: 1px solid rgba(87, 130, 255, 0.56);
+  background: linear-gradient(145deg, rgba(16, 33, 80, 0.82), rgba(9, 19, 48, 0.78));
+}
+
+.tab-button.is-active,
+.status-pill.is-active {
+  border-color: rgba(255, 79, 181, 0.82);
+  background: linear-gradient(135deg, rgba(255, 79, 181, 0.34), rgba(95, 122, 255, 0.32), rgba(34, 211, 255, 0.28));
+  box-shadow: 0 0 20px rgba(255, 79, 181, 0.28), 0 0 16px rgba(34, 211, 255, 0.2);
+}
+
+.ghost-button.is-active,
+.day-chip.is-selected,
+.queue-badge,
+.detail-badge,
+.hero-status {
+  border-color: rgba(34, 211, 255, 0.72);
+  background: linear-gradient(135deg, rgba(34, 211, 255, 0.24), rgba(80, 130, 255, 0.26));
+  color: #dff8ff;
+}
+
+.primary-button {
+  border-color: rgba(255, 79, 181, 0.82);
+  background: linear-gradient(135deg, rgba(255, 79, 181, 0.96), rgba(118, 94, 255, 0.95), rgba(34, 211, 255, 0.9));
+  color: #f8fbff;
+  box-shadow: 0 12px 28px rgba(118, 94, 255, 0.4);
+}
