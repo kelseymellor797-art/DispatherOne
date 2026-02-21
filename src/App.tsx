@@ -8615,7 +8615,18 @@ export default function App() {
     );
   } else if (activeTabId === "drivers") {
     contentBody = (
-      <>        <section className="driver-section">
+      <>
+        <div className="hero-card driver-hero">
+          <p className="hero-label">Drivers</p>
+          <p className="hero-sub">Live dispatch status for today</p>
+          <div className="hero-status">
+            {scheduleDrivers.length === 0
+              ? "No drivers yet. Add them in Settings → Employee Schedule."
+              : `${scheduleDrivers.length} drivers • ${dashboardDrivers.length} active today`}
+          </div>
+        </div>
+
+        <section className="driver-section">
             <div className="driver-section-header">
               <h2>DRIVERS</h2>
               <div className="driver-section-actions">
@@ -9108,7 +9119,20 @@ export default function App() {
 
   } else if (activeTabId === "driver-report") {
     contentBody = (
-      <>        <section className="driver-section">
+      <>
+        <div className="hero-card driver-hero">
+          <p className="hero-label">Driver Report</p>
+          <p className="hero-sub">Closed calls by driver</p>
+          <div className="hero-status">
+            {driverReportLoading
+              ? "Loading..."
+              : driverReportError
+                ? driverReportError
+                : `${filteredDriverReport.length} calls closed`}
+          </div>
+        </div>
+
+        <section className="driver-section">
           <div className="driver-section-header">
             <h2>Driver Call Report</h2>
             <span className="driver-section-meta">
