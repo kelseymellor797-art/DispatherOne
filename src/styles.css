@@ -2665,7 +2665,8 @@ textarea {
 }
 
 .panel-brand {
-  padding: 20px 10px !important;
+  padding: 24px 8px !important;
+  min-height: 92px !important;
   border-radius: 10px !important;
   border: 1px solid rgba(95, 123, 255, 0.85) !important;
   background: linear-gradient(155deg, rgba(12, 27, 72, 0.97), rgba(8, 18, 47, 0.95)) !important;
@@ -2673,6 +2674,14 @@ textarea {
     inset 0 0 0 1px rgba(34, 211, 255, 0.16),
     0 0 0 1px rgba(255, 79, 181, 0.08),
     0 14px 26px rgba(2, 7, 22, 0.7) !important;
+}
+
+.panel-brand .brand-title,
+.panel-brand .brand-subtitle,
+.nav-collapsed .panel-brand .brand-title,
+.nav-collapsed .panel-brand .brand-subtitle {
+  display: block !important;
+  color: #eaf5ff !important;
 }
 
 .tab-nav {
