@@ -657,6 +657,7 @@ const ALWAYS_ON_TOP_KEY = "dispatcherone.alwaysOnTop";
 const NAV_COLLAPSED_KEY = "dispatcherone.navCollapsed";
 const WINDOW_WIDTH = 640;
 const WINDOW_HEIGHT = 900;
+const ADD_CALL_DEFAULT_HEIGHT = 746.14;
 const DRAWER_LABEL = "drawer";
 const FISH_WILDLIFE_TOW_FEE = 210;
 const FISH_WILDLIFE_STORAGE_DAILY = 40;
@@ -779,6 +780,7 @@ export default function App() {
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [selectedPendingCallIds, setSelectedPendingCallIds] = useState<Set<string>>(new Set());
   const [isAddCallOpen, setIsAddCallOpen] = useState(false);
+  const [addCallModalHeight, setAddCallModalHeight] = useState<number | null>(null);
   const [captureCountdown, setCaptureCountdown] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<SearchResults | null>(null);
@@ -2618,6 +2620,37 @@ export default function App() {
     if (callDraft.ppiTimestamp) return;
     setCallDraft((prev) => ({ ...prev, ppiTimestamp: formatTimestamp(Date.now()) }));
   }, [isAddCallOpen, callDraft.callType, callDraft.ppiTimestamp]);
+
+  useEffect(() => {
+    if (!isAddCallOpen || isDrawerWindow) return;
+    setAddCallModalHeight(ADD_CALL_DEFAULT_HEIGHT);
+  }, [isAddCallOpen, isDrawerWindow]);
+
+  const startAddCallHeightResize = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      if (!isAddCallOpen || isDrawerWindow) return;
+      event.preventDefault();
+      const startY = event.clientY;
+      const startHeight = addCallModalHeight ?? ADD_CALL_DEFAULT_HEIGHT;
+      const maxHeight = Math.max(260, window.innerHeight - 32);
+      const minHeight = 220;
+
+      const onMove = (moveEvent: MouseEvent) => {
+        const delta = moveEvent.clientY - startY;
+        const nextHeight = Math.min(maxHeight, Math.max(minHeight, startHeight + delta));
+        setAddCallModalHeight(nextHeight);
+      };
+
+      const onUp = () => {
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+      };
+
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+    },
+    [isAddCallOpen, isDrawerWindow, addCallModalHeight]
+  );
 
   useEffect(() => {
     if (callDraft.callType !== "COD") return;
@@ -4485,39 +4518,9 @@ export default function App() {
           {addCallError ? <div className="form-error">{addCallError}</div> : null}
           {(callDraft.callType === "AAA") && (
             <>
-              <div className="detail-grid-rows">
+              <div className="add-call-layout">
+                <div className="add-call-capture-note">capture to pick up info press Cntrl + Shift + 1</div>
                 <label className="form-field">
-                  Call #
-                  <input
-                    type="text"
-                    value={callDraft.callNumber}
-                    onChange={(event) =>
-                      setCallDraft((prev) => ({ ...prev, callNumber: event.target.value }))
-                    }
-                    placeholder="OCR"
-                  />
-                </label>
-                <label className="form-field detail-row-right">
-                  Work Type ID
-                  <input
-                    type="text"
-                    value={callDraft.workType}
-                    onChange={(event) =>
-                      setCallDraft((prev) => ({ ...prev, workType: event.target.value }))
-                    }
-                  />
-                </label>
-                <label className="form-field detail-row-wide">
-                  Car type
-                  <input
-                    type="text"
-                    value={callDraft.vehicleType}
-                    onChange={(event) =>
-                      setCallDraft((prev) => ({ ...prev, vehicleType: event.target.value }))
-                    }
-                  />
-                </label>
-                <label className="form-field detail-row-wide">
                   Pick up
                   <input
                     type="text"
@@ -4532,7 +4535,7 @@ export default function App() {
                     }}
                   />
                 </label>
-                <div className="detail-row-wide" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <div className="add-call-actions-row">
                   <button
                     type="button"
                     className="ghost-button"
@@ -4574,20 +4577,13 @@ export default function App() {
                       showToast("Pickup marked as confirmed (no validation).");
                     }}
                   >
-                    Use pickup as-is
+                    Use pickup as is
                   </button>
-                  <span style={{ opacity: 0.7, fontSize: 12 }}>
-                    {pickupValidation.status === "validated"
-                      ? `Validated (${confidenceLabel(pickupValidation.result?.validation_score ?? 0)})`
-                      : pickupValidation.status === "as_is"
-                        ? "Confirmed (as-is)"
-                        : "Not confirmed"}
-                  </span>
                 </div>
-                <div className="form-hint detail-row-wide">
-                  <em>To capture pick up info press Ctrl + Shift + 1.</em>
-                </div>
-                <label className="form-field detail-row-wide">
+                <div className="add-call-divider" />
+
+                <div className="add-call-capture-note">capture to drop off info press Cntrl + Shift + 2</div>
+                <label className="form-field">
                   Drop off
                   <input
                     type="text"
@@ -4602,7 +4598,7 @@ export default function App() {
                     }}
                   />
                 </label>
-                <div className="detail-row-wide" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <div className="add-call-actions-row">
                   <button
                     type="button"
                     className="ghost-button"
@@ -4644,334 +4640,101 @@ export default function App() {
                       showToast("Dropoff marked as confirmed (no validation).");
                     }}
                   >
-                    Use dropoff as-is
+                    Use dropoff as is
                   </button>
-                  <span style={{ opacity: 0.7, fontSize: 12 }}>
-                    {dropoffValidation.status === "validated"
-                      ? `Validated (${confidenceLabel(dropoffValidation.result?.validation_score ?? 0)})`
-                      : dropoffValidation.status === "as_is"
-                        ? "Confirmed (as-is)"
-                        : "Not confirmed"}
-                  </span>
                 </div>
-                {showOverMilesSection && (
-                  <>
-                <label className="form-field detail-row-wide">
-                  Total tow miles
-                  <input
-                    type="text"
-                    readOnly
-                    value={
-                      towMilesLoading
-                        ? "Calculating..."
-                        : towMilesError
-                          ? "Unavailable"
-                          : towMiles != null
-                            ? `${towMiles.toFixed(1)} mi`
-                            : "--"
-                    }
-                  />
-                </label>
-                <div className="detail-row-wide" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <button
-                    type="button"
-                    className="ghost-button"
-                    onClick={handleTowMilesRecalculate}
-                    disabled={towMilesLoading}
-                  >
-                    Recalculate
-                  </button>
-                  <span style={{ opacity: 0.7, fontSize: 12 }}>
-                    {pickupValidation.status === "as_is" || dropoffValidation.status === "as_is"
-                      ? "Using unvalidated address (may be inaccurate)"
-                      : pickupValidation.status === "validated" &&
-                          dropoffValidation.status === "validated"
-                        ? "Using validated coordinates"
-                        : "Confirm pickup + dropoff before recalculating"}
-                  </span>
-                  {towMilesError ? (
-                    <span style={{ color: "#ffb4b4", fontSize: 12 }}>{towMilesError}</span>
-                  ) : null}
+                <div className="add-call-divider" />
+
+                <div className="form-row">
+                  <label className="form-field">
+                    Call #
+                    <input
+                      type="text"
+                      value={callDraft.callNumber}
+                      onChange={(event) =>
+                        setCallDraft((prev) => ({ ...prev, callNumber: event.target.value }))
+                      }
+                      placeholder="OCR"
+                    />
+                  </label>
+                  <label className="form-field">
+                    Work Type ID
+                    <input
+                      type="text"
+                      value={callDraft.workType}
+                      onChange={(event) =>
+                        setCallDraft((prev) => ({ ...prev, workType: event.target.value }))
+                      }
+                    />
+                  </label>
                 </div>
-                <label className="form-field detail-row-wide">
-                  Total over miles
-                  <input
-                    type="text"
-                    readOnly
-                    value={
-                      isRvCoverage
-                        ? towMiles != null
-                          ? `${towMiles.toFixed(1)} mi`
-                          : "--"
-                        : coveredMiles == null || towMiles == null
-                          ? "--"
-                          : `${Math.max(0, towMiles - coveredMiles).toFixed(1)} mi`
-                    }
-                  />
-                </label>
-                {overMiles != null && overMiles > 0 ? (
-                  <>
-                    <label className="form-field">
-                      Over Miles
-                      <input type="text" readOnly value={`${overMiles.toFixed(1)} mi`} />
-                    </label>
-                    <label className="form-field detail-row-right">
-                      Over Mile Cost
-                      <input
-                        type="text"
-                        readOnly
-                        value={overMilesCost != null ? `$${overMilesCost.toFixed(2)}` : "--"}
-                      />
-                    </label>
-                    <div className="call-checklist detail-row-wide">
-                      <div className="call-checklist-title">Over Miles Checklist</div>
-                      <label className="checklist-item">
-                        <input
-                          type="checkbox"
-                          checked={overMilesChecklist.calledMember}
-                          onChange={() =>
-                            setOverMilesChecklist((prev) => ({
-                              ...prev,
-                              calledMember: !prev.calledMember,
-                            }))
-                          }
-                        />
-                        <span>Call member &amp; notify them of over miles</span>
-                      </label>
-                      <div className="checklist-item">
-                        <span>Member response</span>
-                      </div>
-                      <label className="checklist-item">
-                        <input
-                          type="radio"
-                          name="over-miles-decision"
-                          checked={overMilesChecklist.decision === "AGREED"}
-                          onChange={() =>
-                            setOverMilesChecklist((prev) => ({
-                              ...prev,
-                              decision: "AGREED",
-                            }))
-                          }
-                        />
-                        <span>Agreed</span>
-                      </label>
-                      {overMilesChecklist.decision === "AGREED" ? (
-                        <>
-                          <label className="checklist-item">
-                            <input
-                              type="checkbox"
-                              checked={overMilesChecklist.paidCard}
-                              onChange={() =>
-                                setOverMilesChecklist((prev) => ({
-                                  ...prev,
-                                  paidCard: !prev.paidCard,
-                                }))
-                              }
-                            />
-                            <span>Paid with card</span>
-                          </label>
-                          <label className="checklist-item">
-                            <input
-                              type="checkbox"
-                              checked={overMilesChecklist.paidCash}
-                              onChange={() =>
-                                setOverMilesChecklist((prev) => ({
-                                  ...prev,
-                                  paidCash: !prev.paidCash,
-                                }))
-                              }
-                            />
-                            <span>Paid with cash</span>
-                          </label>
-                        </>
-                      ) : null}
-                      <label className="checklist-item">
-                        <input
-                          type="radio"
-                          name="over-miles-decision"
-                          checked={overMilesChecklist.decision === "REFUSED"}
-                          onChange={() =>
-                            setOverMilesChecklist((prev) => ({
-                              ...prev,
-                              decision: "REFUSED",
-                            }))
-                          }
-                        />
-                        <span>Refused</span>
-                      </label>
-                      {overMilesChecklist.decision === "REFUSED" ? (
-                        <>
-                          <label className="checklist-item">
-                            <input
-                              type="checkbox"
-                              checked={overMilesChecklist.updateAaa}
-                              onChange={() =>
-                                setOverMilesChecklist((prev) => ({
-                                  ...prev,
-                                  updateAaa: !prev.updateAaa,
-                                }))
-                              }
-                            />
-                            <span>Update AAA feed</span>
-                          </label>
-                          <label className="checklist-item">
-                            <input
-                              type="checkbox"
-                              checked={overMilesChecklist.nsrClear}
-                              onChange={() =>
-                                setOverMilesChecklist((prev) => ({
-                                  ...prev,
-                                  nsrClear: !prev.nsrClear,
-                                }))
-                              }
-                            />
-                            <span>NSR call &amp; clear it</span>
-                          </label>
-                        </>
-                      ) : null}
-                    </div>
-                  </>
-                ) : null}
-                  </>
-                )}
-                <div className="form-hint detail-row-wide">
-                  <em>To capture drop off info press Ctrl + Shift + 2.</em>
-                </div>
-                {(ocrPreview || ocrNotice) && (
-                  <div className="ocr-preview detail-row-wide">
-                    <div className="ocr-preview__header">
-                      <span>
-                        OCR Result{ocrLastTemplate ? ` (${ocrLastTemplate === "ACE_PICKUP" ? "Pickup" : "Dropoff"})` : ""}
-                      </span>
-                      {ocrPreview?.raw_text ? (
-                        <div className="ocr-preview__actions">
-                          <button
-                            type="button"
-                            className="ghost-button"
-                            onClick={() => void handleCopyOcrText(ocrPreview.raw_text)}
-                          >
-                            Copy OCR text
-                          </button>
-                          <button
-                            type="button"
-                            className="ghost-button"
-                            onClick={handleSelectOcrText}
-                          >
-                            Select OCR text
-                          </button>
-                        </div>
-                      ) : null}
-                      {ocrNotice ? <span className="ocr-preview__notice">{ocrNotice}</span> : null}
-                    </div>
-                    {ocrPreview ? (
-                      <>
-                        <div className="ocr-preview__grid">
-                          <div>
-                            <span>Call #</span>
-                            <strong>{ocrPreview.call_number || "—"}</strong>
-                          </div>
-                          <div>
-                            <span>Work Type ID</span>
-                            <strong>{ocrPreview.work_type_id || "—"}</strong>
-                          </div>
-                          <div>
-                            <span>Vehicle</span>
-                            <strong>{ocrPreview.vehicle_name || "—"}</strong>
-                          </div>
-                          <div>
-                            <span>Membership</span>
-                            <strong>{ocrPreview.membership_level || "—"}</strong>
-                          </div>
-                          <div>
-                            <span>PTA</span>
-                            <strong>{ocrPreview.pta || "—"}</strong>
-                          </div>
-                          <div>
-                            <span>Pickup</span>
-                            <strong>{ocrPreview.pickup_address || "—"}</strong>
-                          </div>
-                          <div>
-                            <span>Dropoff</span>
-                            <strong>{ocrPreview.dropoff_address || "—"}</strong>
-                          </div>
-                          <div>
-                            <span>Contact ID</span>
-                            <strong>{ocrPreview.contact_id || "—"}</strong>
-                          </div>
-                          <div>
-                            <span>Phone</span>
-                            <strong>{ocrPreview.phone_number || "—"}</strong>
-                          </div>
-                        </div>
-                        {ocrPreview.raw_text ? (
-                          <details>
-                            <summary>Show OCR text</summary>
-                            <textarea
-                              ref={ocrTextRef}
-                              className="ocr-raw-text"
-                              readOnly
-                              value={ocrPreview.raw_text}
-                            />
-                          </details>
-                        ) : null}
-                      </>
-                    ) : null}
-                  </div>
-                )}
+
                 <label className="form-field">
-                  Contact ID
+                  Car type
                   <input
                     type="text"
-                    value={callDraft.contactId}
+                    value={callDraft.vehicleType}
                     onChange={(event) =>
-                      setCallDraft((prev) => ({ ...prev, contactId: event.target.value }))
+                      setCallDraft((prev) => ({ ...prev, vehicleType: event.target.value }))
                     }
                   />
                 </label>
-                <label className="form-field detail-row-right">
-                  PTA
-                  <input
-                    type="text"
-                    value={callDraft.pta}
-                    onChange={(event) =>
-                      setCallDraft((prev) => ({ ...prev, pta: event.target.value }))
-                    }
-                  />
-                </label>
-                <label className="form-field">
-                  Phone number
-                  <input
-                    type="text"
-                    value={callDraft.memberPhone}
-                    onChange={(event) =>
-                      setCallDraft((prev) => ({
-                        ...prev,
-                        memberPhone:
-                          callDraft.callType === "AAA"
-                            ? event.target.value
-                            : formatPhoneInput(event.target.value),
-                      }))
-                    }
-                  />
-                </label>
-                <label className="form-field detail-row-right">
-                  Membership level
-                  <select
-                    value={callDraft.coverage}
-                    onChange={(event) =>
-                      setCallDraft((prev) => ({ ...prev, coverage: event.target.value }))
-                    }
-                  >
-                    <option value="">Select membership</option>
-                    <option value="Classic (7 miles)">Classic (7 miles)</option>
-                    <option value="Plus (100 miles)">Plus (100 miles)</option>
-                    <option value="Premier (200 miles)">Premier (200 miles)</option>
-                  </select>
-                </label>
+
+                <div className="form-row">
+                  <label className="form-field">
+                    Contact ID
+                    <input
+                      type="text"
+                      value={callDraft.contactId}
+                      onChange={(event) =>
+                        setCallDraft((prev) => ({ ...prev, contactId: event.target.value }))
+                      }
+                    />
+                  </label>
+                  <label className="form-field">
+                    PTA
+                    <input
+                      type="text"
+                      value={callDraft.pta}
+                      onChange={(event) =>
+                        setCallDraft((prev) => ({ ...prev, pta: event.target.value }))
+                      }
+                    />
+                  </label>
+                </div>
+
+                <div className="form-row">
+                  <label className="form-field">
+                    Phone number
+                    <input
+                      type="text"
+                      value={callDraft.memberPhone}
+                      onChange={(event) =>
+                        setCallDraft((prev) => ({
+                          ...prev,
+                          memberPhone: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className="form-field">
+                    Membership level
+                    <select
+                      value={callDraft.coverage}
+                      onChange={(event) =>
+                        setCallDraft((prev) => ({ ...prev, coverage: event.target.value }))
+                      }
+                    >
+                      <option value="">Select membership</option>
+                      <option value="Classic (7 miles)">Classic (7 miles)</option>
+                      <option value="Plus (100 miles)">Plus (100 miles)</option>
+                      <option value="Premier (200 miles)">Premier (200 miles)</option>
+                    </select>
+                  </label>
+                </div>
               </div>
             </>
           )}
-
           {callDraft.callType === "LAW_ENFORCEMENT" ? (
             <div className="detail-grid-rows">
               <label className="form-field">
@@ -5170,9 +4933,9 @@ export default function App() {
             <button
               type="submit"
               className="primary-button"
-              disabled={!overMilesChecklistComplete}
+              disabled={callDraft.callType === "AAA" ? false : !overMilesChecklistComplete}
               title={
-                !overMilesChecklistComplete
+                callDraft.callType !== "AAA" && !overMilesChecklistComplete
                   ? "Complete the over miles checklist to save."
                   : undefined
               }
@@ -6194,6 +5957,12 @@ export default function App() {
                           extractNoteValue(call.notes, "Work Type ID") ??
                           extractNoteValue(call.notes, "Work Type") ??
                           "--";
+                        const carTypeText =
+                          call.vehicle_description?.trim() ||
+                          extractNoteValue(call.notes, "Car Type") ||
+                          extractNoteValue(call.notes, "Vehicle Type") ||
+                          extractNoteValue(call.notes, "Vehicle") ||
+                          "--";
                         const towMilesText =
                           callTowMilesLoading[call.call_id]
                             ? "Calculating..."
@@ -6295,7 +6064,7 @@ export default function App() {
                                 </div>
                                 <div className="pending-field">
                                   <span>Car Type</span>
-                                  <span>{call.vehicle_description ?? "--"}</span>
+                                  <span>{carTypeText}</span>
                                 </div>
                                 <div className="pending-field wide">
                                   <span>Pick Up</span>
@@ -9584,13 +9353,25 @@ export default function App() {
 
       {isAddCallOpen && !isDrawerWindow && (
         <div className="modal-backdrop drawer-backdrop" role="dialog" aria-modal="true">
-          <div className="modal-card drawer-card add-call-card">
+          <div
+            className="modal-card drawer-card add-call-card"
+            style={
+              addCallModalHeight != null
+                ? ({ ["--add-call-height" as string]: `${addCallModalHeight}px` } as React.CSSProperties)
+                : undefined
+            }
+          >
             <header className="modal-header">
               <h3>Add Call</h3>
             </header>
             <form className="modal-body ocr-form" onSubmit={handleAddCallSubmit}>
               {renderAddCallFormFields()}
             </form>
+            <div
+              className="add-call-resize-handle"
+              role="presentation"
+              onMouseDown={startAddCallHeightResize}
+            />
           </div>
         </div>
       )}
@@ -10069,3 +9850,4 @@ export default function App() {
     </div>
   );
 }
+

@@ -1660,7 +1660,7 @@ body {
 }
 
 .pending-call-grid--double {
-  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) !important;
   gap: 16px;
 }
 
@@ -1669,6 +1669,21 @@ body {
   grid-template-columns: 1fr;
   gap: 12px;
   align-content: start;
+}
+
+.pending-call-grid--double .pending-field {
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+
+.pending-call-grid--double .pending-field span:first-child {
+  font-weight: 700;
+}
+
+.pending-call-grid--double .pending-field span:last-child {
+  font-size: 1.02rem;
 }
 
 .pending-field {
@@ -1853,6 +1868,10 @@ body {
 @media (max-width: 900px) {
   .pending-call-grid {
     grid-template-columns: 1fr;
+  }
+
+  .pending-call-grid.pending-call-grid--double {
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr) !important;
   }
 
   .pending-field.wide {
@@ -3080,4 +3099,75 @@ textarea {
 
 .calls-layout .driver-section {
   margin-top: 0 !important;
+}
+
+.calls-layout .pending-calls + .driver-section {
+  margin-top: 18px !important;
+}
+
+/* Pending calls double-column: no per-row bubbles, only outer card frame. */
+.pending-call-grid.pending-call-grid--double .pending-field {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+.pending-call-card {
+  border: 3px solid #ffffff !important;
+  box-shadow: none !important;
+}
+
+.drawer-card.add-call-card {
+  width: min(507.22px, calc(100vw - 24px)) !important;
+  height: var(--add-call-height, min(746.14px, calc(100vh - 32px))) !important;
+  max-width: calc(100vw - 24px) !important;
+  max-height: calc(100vh - 32px) !important;
+  min-height: 220px !important;
+  resize: none !important;
+  position: relative;
+  padding-bottom: 28px !important;
+}
+
+.add-call-resize-handle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 18px;
+  cursor: ns-resize;
+}
+
+.add-call-resize-handle::after {
+  content: "";
+  display: block;
+  width: 62px;
+  height: 4px;
+  margin: 7px auto 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.add-call-layout {
+  display: grid;
+  gap: 12px;
+}
+
+.add-call-capture-note {
+  font-size: 0.86rem;
+  letter-spacing: 0.03em;
+  text-transform: none;
+}
+
+.add-call-actions-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.add-call-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.24);
+  margin: 2px 0;
 }
