@@ -6175,18 +6175,6 @@ export default function App() {
             </div>
             {callsSectionsOpen.pending ? (
               <>
-                <div className="driver-section-actions">
-                  <button
-                    className="ghost-button"
-                    disabled={selectedPendingCallIds.size === 0}
-                    onClick={() => {
-                      void handleCancelCalls(Array.from(selectedPendingCallIds));
-                      setSelectedPendingCallIds(new Set());
-                    }}
-                  >
-                    Delete Selected
-                  </button>
-                </div>
                 <div
                   className={`pending-calls${dragOverUnassigned ? " is-drag-over" : ""}`}
                   onDragOver={(event) => event.preventDefault()}
