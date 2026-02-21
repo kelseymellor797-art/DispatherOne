@@ -3246,17 +3246,17 @@ textarea {
 .weekly-schedule-shell {
   overflow-x: hidden !important;
   overflow-y: auto !important;
-  padding: 17px !important;
+  padding: 0 !important;
   width: 100% !important;
   min-width: 0 !important;
 }
 
 .weekly-schedule-drawer {
   overflow-x: hidden !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: none !important;
-  padding: 17px !important;
+  width: 1070px !important;
+  min-width: 1070px !important;
+  max-width: 1070px !important;
+  padding: 0 !important;
   box-sizing: border-box !important;
   margin-left: auto !important;
   margin-right: auto !important;
@@ -3267,8 +3267,8 @@ textarea {
 .weekly-schedule-drawer .call-detail-header,
 .weekly-schedule-drawer .schedule-toolbar,
 .weekly-schedule-drawer .schedule-section {
-  width: 1060px !important;
-  max-width: 1060px !important;
+  width: 1070px !important;
+  max-width: 1070px !important;
   margin-left: auto !important;
   margin-right: auto !important;
 }
