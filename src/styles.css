@@ -2613,3 +2613,144 @@ body::before {
   border-color: rgba(95, 123, 255, 0.85) !important;
   background: rgba(10, 22, 56, 0.94) !important;
 }
+
+/* Final experiment: content layout sizing/position + typography normalization. */
+:root {
+  --font-ui: "Rajdhani", "Exo 2", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-display: "Orbitron", "Rajdhani", "Exo 2", "Segoe UI", sans-serif;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-ui) !important;
+  font-size: 15px !important;
+  line-height: 1.35 !important;
+}
+
+.app-shell {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  border-radius: 18px !important;
+  grid-template-columns: 124px minmax(0, 1fr) !important;
+}
+
+.app-shell--single {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.side-panel {
+  padding: 16px 10px 14px !important;
+  gap: 12px !important;
+}
+
+.panel-header {
+  gap: 10px !important;
+}
+
+.brand-title {
+  font-family: var(--font-display) !important;
+  font-size: 0.92rem !important;
+  letter-spacing: 0.12em !important;
+}
+
+.brand-subtitle {
+  font-size: 0.78rem !important;
+  letter-spacing: 0.04em !important;
+}
+
+.tab-nav {
+  gap: 8px !important;
+  margin-left: 0 !important;
+}
+
+.tab-button {
+  padding: 8px 8px !important;
+  gap: 4px !important;
+  border-radius: 10px !important;
+}
+
+.tab-label {
+  font-size: 0.66rem !important;
+  letter-spacing: 0.04em !important;
+}
+
+.content {
+  position: relative !important;
+  padding: 14px 16px 14px !important;
+  gap: 12px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+}
+
+.content-header {
+  padding: 10px 12px !important;
+  gap: 10px !important;
+  border-radius: 10px !important;
+}
+
+.content-kicker {
+  margin: 0 0 2px !important;
+  font-size: 0.66rem !important;
+  letter-spacing: 0.12em !important;
+}
+
+.content-title {
+  font-family: var(--font-display) !important;
+  margin: 0 0 2px !important;
+  font-size: clamp(1.2rem, 1.65vw, 1.62rem) !important;
+  line-height: 1.1 !important;
+  letter-spacing: 0.04em !important;
+}
+
+.content-subtitle {
+  font-size: 0.78rem !important;
+  line-height: 1.25 !important;
+}
+
+.content-actions {
+  gap: 8px !important;
+}
+
+.content-body {
+  padding-right: 4px !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+.call-card,
+.driver-card,
+.pending-field,
+.hero-card,
+.detail-card {
+  padding: 12px !important;
+  border-radius: 10px !important;
+}
+
+.call-card-header h3,
+.driver-card-header h3 {
+  font-size: 0.96rem !important;
+  line-height: 1.2 !important;
+}
+
+.call-subtext,
+.driver-role {
+  font-size: 0.64rem !important;
+}
+
+.ghost-button,
+.primary-button,
+.danger-button,
+.panel-action {
+  padding: 8px 10px !important;
+  font-size: 0.74rem !important;
+  letter-spacing: 0.05em !important;
+}
