@@ -4519,7 +4519,7 @@ export default function App() {
           {(callDraft.callType === "AAA") && (
             <>
               <div className="add-call-layout">
-                <div className="add-call-capture-note">capture to pick up info press Cntrl + Shift + 1</div>
+                <div className="add-call-capture-note"><em>["capture to pick up info press Cntrl + Shift + 1"]</em></div>
                 <label className="form-field">
                   Pick up
                   <input
@@ -4582,7 +4582,7 @@ export default function App() {
                 </div>
                 <div className="add-call-divider" />
 
-                <div className="add-call-capture-note">capture to drop off info press Cntrl + Shift + 2</div>
+                <div className="add-call-capture-note"><em>["capture to drop off info press Cntrl + Shift + 2"]</em></div>
                 <label className="form-field">
                   Drop off
                   <input
