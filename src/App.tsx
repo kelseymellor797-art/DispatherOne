@@ -328,6 +328,23 @@ const tabs: Tab[] = [
     ),
   },
   {
+    id: "employee-schedule",
+    label: "Employee Schedule",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="4.5" y="5.5" width="15" height="13.5" rx="2.2" fill="currentColor" />
+        <rect x="7.2" y="3.2" width="1.8" height="4.2" rx="0.9" fill="rgba(5, 6, 8, 0.9)" />
+        <rect x="15" y="3.2" width="1.8" height="4.2" rx="0.9" fill="rgba(5, 6, 8, 0.9)" />
+        <rect x="7.2" y="9.2" width="2.4" height="2.2" rx="0.5" fill="rgba(5, 6, 8, 0.9)" />
+        <rect x="11" y="9.2" width="2.4" height="2.2" rx="0.5" fill="rgba(5, 6, 8, 0.9)" />
+        <rect x="14.8" y="9.2" width="2.4" height="2.2" rx="0.5" fill="rgba(5, 6, 8, 0.9)" />
+        <rect x="7.2" y="12.7" width="2.4" height="2.2" rx="0.5" fill="rgba(5, 6, 8, 0.9)" />
+        <rect x="11" y="12.7" width="2.4" height="2.2" rx="0.5" fill="rgba(5, 6, 8, 0.9)" />
+        <rect x="14.8" y="12.7" width="2.4" height="2.2" rx="0.5" fill="rgba(5, 6, 8, 0.9)" />
+      </svg>
+    ),
+  },
+  {
     id: "settings",
     label: "Settings",
     icon: (
@@ -2539,7 +2556,7 @@ export default function App() {
         return;
       }
 
-      if (activeTabId !== "settings" && selectedDriverId) {
+      if (activeTabId !== "settings" && activeTabId !== "employee-schedule" && selectedDriverId) {
         const target = event.target as HTMLElement | null;
         const isInput =
           target &&
@@ -2571,7 +2588,7 @@ export default function App() {
         }
       }
 
-      if (activeTabId !== "settings") return;
+      if (activeTabId !== "employee-schedule") return;
 
       const key = event.key.toLowerCase();
       if (key === "e") {
@@ -8126,6 +8143,111 @@ export default function App() {
         </section>
       </>
     );
+  } else if (activeTabId === "employee-schedule") {
+    const weekStart = startOfWeek(new Date(nowMs));
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    const weekLabel = `${weekStart.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}`;
+    contentBody = (
+      <>
+        <div className="hero-card">
+          <p className="hero-label">Employee Schedule</p>
+          <p className="hero-sub">Manage weekly driver coverage</p>
+          <div className="hero-status">Add drivers, assign shifts, and clear weeks.</div>
+        </div>
+
+        <section className="detail-card">
+          <div className="schedule-toolbar">
+            <div>
+              <p className="content-kicker">Employee schedule</p>
+              <h2 className="schedule-title">Week of {weekLabel}</h2>
+            </div>
+            <div className="schedule-actions">
+              <button className="ghost-button" onClick={() => setIsAddEmployeeOpen(true)}>
+                Add Driver
+              </button>
+              <button
+                className="ghost-button"
+                onClick={() => {
+                  if (scheduleDrivers.length > 0) {
+                    setDeleteEmployeeId(scheduleDrivers[0].id);
+                  } else {
+                    setDeleteEmployeeId("");
+                  }
+                  setIsDeleteEmployeeOpen(true);
+                }}
+              >
+                Delete Driver
+              </button>
+              <button className="ghost-button" onClick={() => setIsAddShiftOpen(true)}>
+                Add Shift
+              </button>
+              <button className="ghost-button" onClick={handleClearWeek}>
+                Clear week
+              </button>
+            </div>
+          </div>
+
+          <section className="schedule-section">
+            <h2 className="section-title">Drivers</h2>
+            <div className="schedule-grid">
+              <div className="schedule-grid-header">
+                <div className="schedule-cell schedule-cell--head schedule-cell--corner">
+                  Driver
+                </div>
+                {days.map((day) => (
+                  <div key={day} className="schedule-cell schedule-cell--head">
+                    {day}
+                  </div>
+                ))}
+              </div>
+              {scheduleLoading ? (
+                <div className="schedule-empty">Loading schedule???</div>
+              ) : scheduleError ? (
+                <div className="schedule-empty">{scheduleError}</div>
+              ) : scheduleDrivers.length === 0 ? (
+                <div className="schedule-empty">No drivers yet.</div>
+              ) : (
+                scheduleDrivers.map((employee) => (
+                  <div key={employee.id} className="schedule-row">
+                    <div className="schedule-cell schedule-cell--name">{employee.display_name}</div>
+                    {days.map((day) => {
+                      const dayIndex = days.indexOf(day);
+                      const targetDate = new Date(weekStart);
+                      targetDate.setDate(weekStart.getDate() + dayIndex);
+                      const shift = scheduleShiftLookup.get(`${employee.id}-${dateKey(targetDate)}`);
+                      return (
+                        <div key={day} className="schedule-cell">
+                          {shift ? (
+                            <button
+                              className="shift-block"
+                              onClick={() => {
+                                setEditingShift(shift);
+                                setEditDraft({
+                                  start: isoToTimeInput(shift.shift_start),
+                                  end: isoToTimeInput(shift.shift_end),
+                                  lunchStart: isoToTimeInput(shift.lunch_start),
+                                  lunchEnd: isoToTimeInput(shift.lunch_end),
+                                  lunchOverride: false,
+                                });
+                              }}
+                            >
+                              {formatIsoRange(shift.shift_start, shift.shift_end)}
+                            </button>
+                          ) : (
+                            <span className="shift-empty">???</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        </section>
+      </>
+    );
   } else if (activeTabId === "settings") {
     const eventTypes = [
       "CALL_CREATED",
@@ -8139,10 +8261,6 @@ export default function App() {
       "CALL_ACTIVE_REASSIGNED",
       "DRIVER_STATUS_CHANGED",
     ];
-    const weekStart = startOfWeek(new Date(nowMs));
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
-    const weekLabel = `${weekStart.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}`;
     contentBody = (
       <>
         <div className="hero-card">
@@ -8399,97 +8517,6 @@ export default function App() {
         </section>
 
         <section className="detail-card">
-          <div className="schedule-toolbar">
-            <div>
-              <p className="content-kicker">Employee schedule</p>
-              <h2 className="schedule-title">Week of {weekLabel}</h2>
-            </div>
-            <div className="schedule-actions">
-              <button className="ghost-button" onClick={() => setIsAddEmployeeOpen(true)}>
-                Add Driver
-              </button>
-              <button
-                className="ghost-button"
-                onClick={() => {
-                  if (scheduleDrivers.length > 0) {
-                    setDeleteEmployeeId(scheduleDrivers[0].id);
-                  } else {
-                    setDeleteEmployeeId("");
-                  }
-                  setIsDeleteEmployeeOpen(true);
-                }}
-              >
-                Delete Driver
-              </button>
-              <button className="ghost-button" onClick={() => setIsAddShiftOpen(true)}>
-                Add Shift
-              </button>
-              <button className="ghost-button" onClick={handleClearWeek}>
-                Clear week
-              </button>
-            </div>
-          </div>
-
-          <section className="schedule-section">
-            <h2 className="section-title">Drivers</h2>
-            <div className="schedule-grid">
-              <div className="schedule-grid-header">
-                <div className="schedule-cell schedule-cell--head schedule-cell--corner">
-                  Driver
-                </div>
-                {days.map((day) => (
-                  <div key={day} className="schedule-cell schedule-cell--head">
-                    {day}
-                  </div>
-                ))}
-              </div>
-              {scheduleLoading ? (
-                <div className="schedule-empty">Loading schedule???</div>
-              ) : scheduleError ? (
-                <div className="schedule-empty">{scheduleError}</div>
-              ) : scheduleDrivers.length === 0 ? (
-                <div className="schedule-empty">No drivers yet.</div>
-              ) : (
-                scheduleDrivers.map((employee) => (
-                  <div key={employee.id} className="schedule-row">
-                    <div className="schedule-cell schedule-cell--name">{employee.display_name}</div>
-                    {days.map((day) => {
-                      const dayIndex = days.indexOf(day);
-                      const targetDate = new Date(weekStart);
-                      targetDate.setDate(weekStart.getDate() + dayIndex);
-                      const shift = scheduleShiftLookup.get(`${employee.id}-${dateKey(targetDate)}`);
-                      return (
-                        <div key={day} className="schedule-cell">
-                          {shift ? (
-                            <button
-                              className="shift-block"
-                              onClick={() => {
-                                setEditingShift(shift);
-                                setEditDraft({
-                                  start: isoToTimeInput(shift.shift_start),
-                                  end: isoToTimeInput(shift.shift_end),
-                                  lunchStart: isoToTimeInput(shift.lunch_start),
-                                  lunchEnd: isoToTimeInput(shift.lunch_end),
-                                  lunchOverride: false,
-                                });
-                              }}
-                            >
-                              {formatIsoRange(shift.shift_start, shift.shift_end)}
-                            </button>
-                          ) : (
-                            <span className="shift-empty">???</span>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
-        </section>
-
-        <section className="detail-card">
           <h2>Reset app data</h2>
           <p className="content-subtitle">
             Clears active/pending calls, events, drivers, shifts, and AAA calls/logs so you can start fresh.
@@ -8547,7 +8574,7 @@ export default function App() {
           <p className="hero-sub">Live dispatch status for today</p>
           <div className="hero-status">
             {scheduleDrivers.length === 0
-              ? "No drivers yet. Add them in Settings → Employee Schedule."
+              ? "No drivers yet. Add them in Employee Schedule."
               : `${scheduleDrivers.length} drivers • ${dashboardDrivers.length} active today`}
           </div>
         </div>
