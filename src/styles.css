@@ -3077,6 +3077,8 @@ textarea {
 .add-call-source-row {
   display: grid !important;
   gap: 5px !important;
+  align-content: start !important;
+  margin-top: 0 !important;
 }
 
 .add-call-source-label {
@@ -3101,6 +3103,9 @@ textarea {
 
 .add-call-card .modal-body {
   gap: 5px !important;
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+  align-content: start !important;
 }
 
 /* Calls window: normalize section spacing and increase by 15%. */
