@@ -2796,3 +2796,64 @@ body {
   border-color: rgba(47, 224, 255, 0.9) !important;
   text-shadow: 0 0 10px rgba(47, 224, 255, 0.35) !important;
 }
+
+/* Neon boost pass: push cyan brightness and glow intensity. */
+:root {
+  --text: #8ff6ff !important;
+  --muted: #62e7ff !important;
+  --accent: #38eeff !important;
+  --accent-strong: #00d6ff !important;
+  --panel-border: rgba(56, 238, 255, 0.92) !important;
+  --glow: rgba(56, 238, 255, 0.62) !important;
+}
+
+.app-shell {
+  border-color: rgba(56, 238, 255, 0.96) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(143, 246, 255, 0.28),
+    0 0 30px rgba(56, 238, 255, 0.42),
+    0 0 74px rgba(0, 214, 255, 0.34),
+    0 24px 70px rgba(1, 3, 10, 0.9) !important;
+}
+
+.call-card,
+.driver-card,
+.pending-field,
+.hero-card,
+.modal-card,
+.drawer-card,
+.content-header,
+.calls-header,
+.driver-section-header,
+.tab-button,
+.panel-action,
+.ghost-button,
+.form-field input,
+.form-field select,
+.form-field textarea,
+.global-search input {
+  border-color: rgba(56, 238, 255, 0.94) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(143, 246, 255, 0.2),
+    0 0 16px rgba(56, 238, 255, 0.24),
+    0 10px 24px rgba(1, 7, 18, 0.62) !important;
+}
+
+.content-title,
+.call-status-code,
+.driver-name {
+  color: #b7fbff !important;
+  text-shadow:
+    0 0 10px rgba(56, 238, 255, 0.6),
+    0 0 24px rgba(0, 214, 255, 0.4) !important;
+}
+
+.tab-button.is-active,
+.call-card.is-selected,
+.driver-card.is-selected,
+.status-pill.is-active {
+  background: linear-gradient(135deg, rgba(56, 238, 255, 0.34), rgba(32, 166, 255, 0.38)) !important;
+  box-shadow:
+    0 0 20px rgba(56, 238, 255, 0.44),
+    inset 0 0 0 1px rgba(183, 251, 255, 0.22) !important;
+}
