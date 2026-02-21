@@ -2613,3 +2613,112 @@ body::before {
   border-color: rgba(95, 123, 255, 0.85) !important;
   background: rgba(10, 22, 56, 0.94) !important;
 }
+
+/* Reference #1 exact-match attempt: deep navy + cyan UI kit */
+body {
+  background:
+    radial-gradient(circle at 50% 0%, rgba(28, 74, 168, 0.26), transparent 36%),
+    radial-gradient(circle at 20% 75%, rgba(16, 183, 255, 0.1), transparent 44%),
+    radial-gradient(circle at 84% 24%, rgba(64, 110, 255, 0.12), transparent 42%),
+    #020919 !important;
+}
+
+.app-shell {
+  border-radius: 0 !important;
+  margin: 0 !important;
+  border: 1px solid rgba(46, 140, 255, 0.62) !important;
+  background: linear-gradient(180deg, rgba(4, 16, 40, 0.98), rgba(3, 12, 32, 0.98)) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(38, 204, 255, 0.22),
+    0 0 24px rgba(38, 204, 255, 0.14),
+    0 16px 48px rgba(0, 2, 9, 0.9) !important;
+}
+
+.side-panel {
+  border-right: 1px solid rgba(42, 122, 232, 0.65) !important;
+  background: linear-gradient(180deg, rgba(4, 20, 50, 0.97), rgba(3, 14, 38, 0.97)) !important;
+}
+
+.content {
+  background: linear-gradient(180deg, rgba(3, 13, 36, 0.78), rgba(3, 10, 28, 0.74)) !important;
+}
+
+.content-header,
+.calls-header,
+.driver-section-header,
+.call-card,
+.driver-card,
+.pending-field,
+.hero-card,
+.modal-card,
+.drawer-card,
+.tab-button,
+.panel-action,
+.ghost-button {
+  border-radius: 12px !important;
+  border: 1px solid rgba(40, 127, 236, 0.72) !important;
+  background: linear-gradient(180deg, rgba(6, 27, 66, 0.95), rgba(4, 18, 47, 0.95)) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(38, 204, 255, 0.14),
+    0 10px 22px rgba(0, 5, 16, 0.62) !important;
+}
+
+.tab-button.is-active,
+.status-pill.is-active,
+.call-card.is-selected,
+.driver-card.is-selected {
+  border-color: rgba(65, 198, 255, 0.92) !important;
+  background: linear-gradient(135deg, rgba(27, 173, 255, 0.34), rgba(69, 122, 255, 0.34)) !important;
+  box-shadow: 0 0 16px rgba(38, 204, 255, 0.3), inset 0 0 0 1px rgba(143, 226, 255, 0.22) !important;
+}
+
+.content-title,
+.call-status-code,
+.driver-name {
+  color: #b8ecff !important;
+  text-shadow: 0 0 10px rgba(38, 204, 255, 0.28) !important;
+}
+
+.content-kicker,
+.content-subtitle,
+.tab-index,
+.tab-icon,
+.driver-role,
+.call-subtext,
+.modal-summary,
+.shortcut-hint {
+  color: #6fb6e8 !important;
+}
+
+.status-pill,
+.queue-badge,
+.detail-badge,
+.hero-status {
+  border-color: rgba(44, 136, 244, 0.75) !important;
+  background: linear-gradient(180deg, rgba(8, 36, 82, 0.88), rgba(5, 22, 56, 0.88)) !important;
+  color: #9fe3ff !important;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea,
+.global-search input {
+  border: 1px solid rgba(42, 128, 235, 0.78) !important;
+  background: linear-gradient(180deg, rgba(7, 30, 70, 0.94), rgba(4, 19, 49, 0.94)) !important;
+  color: #d8f4ff !important;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus,
+.global-search input:focus {
+  border-color: rgba(78, 216, 255, 0.96) !important;
+  box-shadow: 0 0 0 1px rgba(78, 216, 255, 0.4), 0 0 16px rgba(38, 204, 255, 0.26) !important;
+}
+
+.primary-button {
+  border: 1px solid rgba(78, 216, 255, 0.9) !important;
+  background: linear-gradient(135deg, rgba(25, 178, 255, 0.96), rgba(88, 130, 255, 0.94)) !important;
+  color: #06142f !important;
+  box-shadow: 0 10px 24px rgba(23, 152, 255, 0.28) !important;
+}
