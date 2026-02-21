@@ -3092,7 +3092,15 @@ textarea {
 .add-call-card .modal-header {
   justify-content: flex-start !important;
   align-items: flex-start !important;
-  margin-bottom: 5px !important;
+  margin-bottom: 0 !important;
+}
+
+.add-call-card {
+  gap: 5px !important;
+}
+
+.add-call-card .modal-body {
+  gap: 5px !important;
 }
 
 /* Calls window: normalize section spacing and increase by 15%. */
