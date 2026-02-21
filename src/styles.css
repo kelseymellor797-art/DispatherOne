@@ -4,20 +4,20 @@
   line-height: 1.5;
   font-weight: 400;
 
-  --black: #090f21;
-  --panel: #111833;
-  --panel-border: rgba(146, 109, 255, 0.34);
-  --text: #ebefff;
-  --muted: #a8b0d9;
-  --accent: #6f4bff;
-  --accent-strong: #00c0ff;
-  --chip: rgba(255, 54, 171, 0.14);
-  --glow: rgba(111, 75, 255, 0.26);
-  --danger: #d93567;
+  --black: #0f0b1f;
+  --panel: #20163b;
+  --panel-border: rgba(198, 132, 255, 0.42);
+  --text: #f6eeff;
+  --muted: #b8a8d6;
+  --accent: #ff4fd8;
+  --accent-strong: #28d7ff;
+  --chip: rgba(78, 255, 184, 0.16);
+  --glow: rgba(255, 79, 216, 0.3);
+  --danger: #ff5a8f;
   --radius-lg: 24px;
   --radius-md: 14px;
   --radius-sm: 10px;
-  --shadow-soft: 0 20px 48px rgba(5, 9, 20, 0.62);
+  --shadow-soft: 0 22px 54px rgba(11, 6, 28, 0.68);
 }
 
 * {
@@ -35,10 +35,10 @@ body {
   margin: 0;
   min-height: 100vh;
   color: var(--text);
-  background: radial-gradient(circle at 12% 16%, rgba(0, 255, 188, 0.16), transparent 42%),
-    radial-gradient(circle at 82% 9%, rgba(177, 66, 255, 0.26), transparent 40%),
-    radial-gradient(circle at 48% 80%, rgba(0, 192, 255, 0.16), transparent 58%),
-    radial-gradient(circle at 70% 45%, rgba(255, 54, 171, 0.12), transparent 52%),
+  background: radial-gradient(circle at 14% 18%, rgba(78, 255, 184, 0.12), transparent 42%),
+    radial-gradient(circle at 83% 11%, rgba(176, 76, 255, 0.32), transparent 41%),
+    radial-gradient(circle at 52% 76%, rgba(40, 215, 255, 0.18), transparent 56%),
+    radial-gradient(circle at 72% 43%, rgba(255, 79, 216, 0.2), transparent 54%),
     var(--black);
   display: flex;
   justify-content: center;
@@ -2238,17 +2238,17 @@ body.floating-mode .content {
   }
 }
 
-/* Final light theme override block - placed at EOF to win cascade order. */
+/* Final Neo Night Lavender override block - placed at EOF to win cascade order. */
 .app-shell {
-  background: linear-gradient(145deg, rgba(13, 18, 38, 0.9), rgba(10, 14, 32, 0.88));
-  border: 1px solid rgba(151, 120, 255, 0.44);
-  box-shadow: 0 0 0 1px rgba(0, 192, 255, 0.22), 0 0 42px rgba(177, 66, 255, 0.24), var(--shadow-soft);
+  background: linear-gradient(145deg, rgba(31, 20, 56, 0.92), rgba(19, 13, 39, 0.9));
+  border: 1px solid rgba(198, 132, 255, 0.46);
+  box-shadow: 0 0 0 1px rgba(40, 215, 255, 0.24), 0 0 48px rgba(255, 79, 216, 0.24), var(--shadow-soft);
 }
 
 .side-panel {
-  background: linear-gradient(170deg, rgba(16, 22, 45, 0.95), rgba(12, 30, 42, 0.92));
-  border-right: 1px solid rgba(151, 120, 255, 0.42);
-  box-shadow: inset -1px 0 0 rgba(0, 192, 255, 0.26);
+  background: linear-gradient(170deg, rgba(37, 24, 66, 0.95), rgba(27, 19, 51, 0.92));
+  border-right: 1px solid rgba(198, 132, 255, 0.48);
+  box-shadow: inset -1px 0 0 rgba(40, 215, 255, 0.24);
 }
 
 .panel-toggle,
@@ -2275,44 +2275,44 @@ body.floating-mode .content {
 .driver-status-select,
 .aaa-table td input[type="text"],
 .aaa-notes-input {
-  background: linear-gradient(135deg, rgba(20, 27, 54, 0.92), rgba(10, 26, 40, 0.88));
+  background: linear-gradient(135deg, rgba(44, 29, 76, 0.9), rgba(23, 28, 58, 0.88));
   color: var(--text);
-  border-color: rgba(151, 120, 255, 0.34);
-  box-shadow: 0 0 0 1px rgba(0, 255, 188, 0.1);
+  border-color: rgba(198, 132, 255, 0.36);
+  box-shadow: 0 0 0 1px rgba(78, 255, 184, 0.12);
 }
 
 .content {
-  background: linear-gradient(150deg, rgba(12, 18, 38, 0.58), rgba(10, 16, 34, 0.46));
+  background: linear-gradient(150deg, rgba(26, 18, 49, 0.56), rgba(20, 14, 39, 0.44));
 }
 
 .tab-button.is-active {
-  border-color: rgba(255, 54, 171, 0.52);
-  background: linear-gradient(135deg, rgba(255, 54, 171, 0.2), rgba(111, 75, 255, 0.26), rgba(0, 192, 255, 0.22));
-  box-shadow: 0 8px 22px rgba(111, 75, 255, 0.24), 0 0 18px rgba(255, 54, 171, 0.18);
+  border-color: rgba(255, 79, 216, 0.6);
+  background: linear-gradient(135deg, rgba(255, 79, 216, 0.24), rgba(176, 76, 255, 0.3), rgba(40, 215, 255, 0.24));
+  box-shadow: 0 8px 24px rgba(176, 76, 255, 0.28), 0 0 20px rgba(255, 79, 216, 0.24);
 }
 
 .ghost-button.is-active,
 .day-chip.is-selected {
-  border-color: rgba(0, 255, 188, 0.5);
-  background: linear-gradient(135deg, rgba(0, 255, 188, 0.28), rgba(0, 192, 255, 0.22));
+  border-color: rgba(78, 255, 184, 0.56);
+  background: linear-gradient(135deg, rgba(78, 255, 184, 0.24), rgba(40, 215, 255, 0.2));
   color: var(--text);
 }
 
 .primary-button {
-  border-color: rgba(111, 75, 255, 0.68);
-  background: linear-gradient(135deg, rgba(255, 54, 171, 0.92), rgba(111, 75, 255, 0.94), rgba(0, 192, 255, 0.9));
-  box-shadow: 0 10px 24px rgba(111, 75, 255, 0.3);
+  border-color: rgba(176, 76, 255, 0.72);
+  background: linear-gradient(135deg, rgba(255, 79, 216, 0.94), rgba(176, 76, 255, 0.94), rgba(40, 215, 255, 0.9));
+  box-shadow: 0 10px 26px rgba(176, 76, 255, 0.34);
 }
 
 .danger-button {
-  border-color: rgba(217, 53, 103, 0.44);
-  background: rgba(255, 86, 136, 0.16);
-  color: #a01d4b;
+  border-color: rgba(255, 90, 143, 0.46);
+  background: rgba(255, 90, 143, 0.16);
+  color: #ffb8cf;
 }
 
 body.floating-mode {
-  background: radial-gradient(circle at 25% 15%, rgba(0, 255, 188, 0.14), transparent 42%),
-    radial-gradient(circle at 80% 20%, rgba(177, 66, 255, 0.26), transparent 44%),
-    radial-gradient(circle at 54% 74%, rgba(0, 192, 255, 0.14), transparent 48%),
+  background: radial-gradient(circle at 25% 15%, rgba(78, 255, 184, 0.14), transparent 42%),
+    radial-gradient(circle at 80% 20%, rgba(176, 76, 255, 0.28), transparent 44%),
+    radial-gradient(circle at 54% 74%, rgba(40, 215, 255, 0.16), transparent 48%),
     var(--black);
 }
