@@ -2523,15 +2523,20 @@ export default function App() {
   }, [isTauri]);
 
   useEffect(() => {
+    if (!(isDrawerWindow || isFloatingWindow || isReportWindow)) return;
+    const onEscapeCapture = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      void closeCurrentNonMainWindow();
+    };
+    document.addEventListener("keydown", onEscapeCapture, true);
+    return () => document.removeEventListener("keydown", onEscapeCapture, true);
+  }, [isDrawerWindow, isFloatingWindow, isReportWindow, closeCurrentNonMainWindow]);
+
+  useEffect(() => {
     const handleKeydown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        if (isDrawerWindow || isFloatingWindow || isReportWindow) {
-          event.preventDefault();
-          void closeCurrentNonMainWindow();
-          return;
-        }
-        return;
-      }
+      if (event.key === "Escape") return;
 
       if (!(event.ctrlKey || event.metaKey)) return;
       if (event.altKey) return;
@@ -5120,7 +5125,15 @@ export default function App() {
         className={`drawer-shell${drawerMode === "weekly-schedule" ? " weekly-schedule-shell" : ""}`}
         style={
           drawerMode === "weekly-schedule"
-            ? { padding: 0, overflowX: "hidden", overflowY: "auto" }
+            ? {
+                padding: 0,
+                overflowX: "hidden",
+                overflowY: "auto",
+                width: WEEKLY_SCHEDULE_DRAWER_WIDTH,
+                minWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
+                maxWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
+                margin: "0 auto",
+              }
             : undefined
         }
       >
