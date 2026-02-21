@@ -657,7 +657,7 @@ const ALWAYS_ON_TOP_KEY = "dispatcherone.alwaysOnTop";
 const NAV_COLLAPSED_KEY = "dispatcherone.navCollapsed";
 const WINDOW_WIDTH = 640;
 const WEEKLY_SCHEDULE_BASE_WIDTH = 1180;
-const WEEKLY_SCHEDULE_DRAWER_WIDTH = 1870;
+const WEEKLY_SCHEDULE_DRAWER_WIDTH = 2244;
 const WEEKLY_SCHEDULE_DRAWER_HEIGHT = 760;
 const WEEKLY_SCHEDULE_Y_OFFSET = 84;
 const DRAWER_SCREEN_MARGIN = 16;
@@ -4294,7 +4294,10 @@ export default function App() {
       try {
         const monitor = (await monitorFromPoint(pos.x, pos.y)) ?? (await primaryMonitor());
         if (monitor) {
-          const maxDrawerWidth = Math.max(560, monitor.size.width - DRAWER_SCREEN_MARGIN * 2);
+          const maxDrawerWidth =
+            mode === "weekly-schedule"
+              ? Math.max(560, monitor.size.width - 4)
+              : Math.max(560, monitor.size.width - DRAWER_SCREEN_MARGIN * 2);
           drawerWidth = Math.min(drawerWidth, maxDrawerWidth);
           if (mode === "weekly-schedule") {
             drawerHeight = Math.min(
@@ -4562,7 +4565,7 @@ export default function App() {
         if (monitor) {
           drawerWidth = Math.min(
             WEEKLY_SCHEDULE_DRAWER_WIDTH,
-            Math.max(560, monitor.size.width - DRAWER_SCREEN_MARGIN * 2)
+            Math.max(560, monitor.size.width - 4)
           );
           drawerHeight = Math.min(
             WEEKLY_SCHEDULE_DRAWER_HEIGHT,
