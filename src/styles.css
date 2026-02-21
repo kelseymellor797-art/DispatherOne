@@ -2217,9 +2217,12 @@ body.floating-mode .content {
   width: 462px;
   max-width: 90vw;
   height: 25%;
+  min-height: 220px;
+  max-height: calc(100vh - 32px);
   border-radius: 0;
   animation: slideIn 200ms ease-out;
   overflow-y: auto;
+  resize: vertical;
 }
 
 @keyframes slideIn {
