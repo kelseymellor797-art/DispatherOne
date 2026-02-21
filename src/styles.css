@@ -2821,6 +2821,21 @@ textarea {
   display: none !important;
 }
 
+.nav-collapsed .side-panel .tab-icon {
+  display: inline-flex !important;
+  width: 24px !important;
+  height: 24px !important;
+  color: #dff7ff !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.nav-collapsed .side-panel .tab-icon svg {
+  width: 100% !important;
+  height: 100% !important;
+  filter: drop-shadow(0 0 6px rgba(0, 255, 255, 0.55)) !important;
+}
+
 .nav-collapsed .tab-button.is-active {
   border-color: rgba(0, 255, 255, 0.96) !important;
   background: linear-gradient(135deg, rgba(0, 255, 247, 0.34), rgba(0, 166, 255, 0.38)) !important;
