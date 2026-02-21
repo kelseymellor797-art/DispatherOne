@@ -721,6 +721,13 @@ export default function App() {
   const isReportWindow = Boolean(reportTabId);
   const isDrawerWindow =
     drawerMode === "new-call" || drawerMode === "call-detail" || drawerMode === "weekly-schedule";
+  const windowModeClass = isDrawerWindow
+    ? "window-shell--drawer"
+    : isFloatingWindow
+      ? "window-shell--floating"
+      : isReportWindow
+        ? "window-shell--report"
+        : "window-shell--main";
   const showNavigation = !isReportWindow;
   const showHeaderActions = !isReportWindow;
 
@@ -740,6 +747,7 @@ export default function App() {
   const floatingWindowRef = useRef<Window | null>(null);
   const drawerModeRef = useRef<"call-detail" | "weekly-schedule" | null>(null);
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const nonMainShellRef = useRef<HTMLDivElement | null>(null);
   const weeklyGridRef = useRef<HTMLDivElement | null>(null);
   const lastEscapeHandledAtRef = useRef(0);
   const [dashboard, setDashboard] = useState<DashboardSnapshot | null>(null);
@@ -2589,26 +2597,13 @@ export default function App() {
 
   useEffect(() => {
     if (!(isDrawerWindow || isFloatingWindow || isReportWindow)) return;
-    const onEscapeCapture = (event: KeyboardEvent) => {
-      if (!isEscapeKey(event)) return;
-      const now = Date.now();
-      if (now - lastEscapeHandledAtRef.current < 150) return;
-      lastEscapeHandledAtRef.current = now;
-      event.preventDefault();
-      event.stopPropagation();
-      void closeCurrentNonMainWindow();
-    };
-    document.addEventListener("keydown", onEscapeCapture, true);
-    document.addEventListener("keyup", onEscapeCapture, true);
-    window.addEventListener("keydown", onEscapeCapture, true);
-    window.addEventListener("keyup", onEscapeCapture, true);
+    const frame = window.requestAnimationFrame(() => {
+      nonMainShellRef.current?.focus();
+    });
     return () => {
-      document.removeEventListener("keydown", onEscapeCapture, true);
-      document.removeEventListener("keyup", onEscapeCapture, true);
-      window.removeEventListener("keydown", onEscapeCapture, true);
-      window.removeEventListener("keyup", onEscapeCapture, true);
+      window.cancelAnimationFrame(frame);
     };
-  }, [isDrawerWindow, isFloatingWindow, isReportWindow, closeCurrentNonMainWindow]);
+  }, [isDrawerWindow, isFloatingWindow, isReportWindow]);
 
   useEffect(() => {
     const handleKeydown = (event: KeyboardEvent) => {
@@ -5200,37 +5195,15 @@ export default function App() {
     const weekLabel = `${weekStart.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}`;
     return (
       <div
-        className={`drawer-shell${drawerMode === "weekly-schedule" ? " weekly-schedule-shell" : ""}`}
+        ref={nonMainShellRef}
+        className={`drawer-shell ${windowModeClass}${drawerMode === "weekly-schedule" ? " weekly-schedule-shell" : ""}`}
         onKeyDownCapture={handleNonMainEscapeCapture}
         onKeyUpCapture={handleNonMainEscapeCapture}
         tabIndex={-1}
-        style={
-          drawerMode === "weekly-schedule"
-            ? {
-                padding: 0,
-                overflowX: "hidden",
-                overflowY: "hidden",
-                width: WEEKLY_SCHEDULE_DRAWER_WIDTH,
-                minWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
-                maxWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
-                margin: "0 auto",
-              }
-            : undefined
-        }
       >
         {drawerMode === "weekly-schedule" ? (
-          <div
-            className="detail-card call-detail-card weekly-schedule-drawer"
-            style={{
-              width: WEEKLY_SCHEDULE_DRAWER_WIDTH,
-              minWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
-              maxWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
-              padding: 0,
-              marginLeft: "auto",
-              marginRight: "auto",
-            }}
-          >
-            <header className="call-detail-header" style={{ width: WEEKLY_SCHEDULE_GRID_WIDTH, margin: "0 auto" }}>
+          <div className="detail-card call-detail-card weekly-schedule-drawer">
+            <header className="call-detail-header">
               <h3>Weekly Schedule</h3>
               <div className="call-detail-actions">
                 <button className="ghost-button" onClick={() => void closeDrawerWindow()}>
@@ -5238,7 +5211,7 @@ export default function App() {
                 </button>
               </div>
             </header>
-            <div className="schedule-toolbar" style={{ width: WEEKLY_SCHEDULE_GRID_WIDTH, margin: "0 auto" }}>
+            <div className="schedule-toolbar">
               <div>
                 <p className="content-kicker">Employee schedule</p>
                 <h2 className="schedule-title">Week of {weekLabel}</h2>
@@ -5268,26 +5241,9 @@ export default function App() {
                 </button>
               </div>
             </div>
-            <section
-              className="schedule-section"
-              style={{
-                width: WEEKLY_SCHEDULE_DRAWER_WIDTH,
-                margin: "0 auto",
-                padding: WEEKLY_SCHEDULE_GRID_MARGIN,
-                boxSizing: "border-box",
-              }}
-            >
+            <section className="schedule-section">
               <h2 className="section-title">Drivers</h2>
-              <div
-                ref={weeklyGridRef}
-                className="schedule-grid weekly-schedule-grid"
-                style={{
-                  width: "100%",
-                  minWidth: "100%",
-                  maxWidth: "100%",
-                  margin: 0,
-                }}
-              >
+              <div ref={weeklyGridRef} className="schedule-grid weekly-schedule-grid">
                 <div className="schedule-grid-header">
                   <div className="schedule-cell schedule-cell--head schedule-cell--corner">
                     Driver
@@ -9482,7 +9438,8 @@ export default function App() {
 
   return (
     <div
-      className={`app-shell${showNavigation ? "" : " app-shell--single"}`}
+      ref={isFloatingWindow || isReportWindow ? nonMainShellRef : null}
+      className={`app-shell ${windowModeClass}${showNavigation ? "" : " app-shell--single"}`}
       onKeyDownCapture={handleNonMainEscapeCapture}
       onKeyUpCapture={handleNonMainEscapeCapture}
       tabIndex={isFloatingWindow || isReportWindow ? -1 : undefined}

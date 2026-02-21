@@ -3282,3 +3282,15 @@ textarea {
   padding: 8px !important;
   box-sizing: border-box !important;
 }
+
+.window-shell--drawer.weekly-schedule-shell {
+  width: 1076px !important;
+  min-width: 1076px !important;
+  max-width: 1076px !important;
+  margin: 0 auto !important;
+}
+
+.window-shell--floating,
+.window-shell--report {
+  outline: none !important;
+}
