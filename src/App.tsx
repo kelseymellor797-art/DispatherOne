@@ -656,6 +656,7 @@ const PANEL_SIDE_KEY = "dispatcherone.panelSide";
 const ALWAYS_ON_TOP_KEY = "dispatcherone.alwaysOnTop";
 const NAV_COLLAPSED_KEY = "dispatcherone.navCollapsed";
 const WINDOW_WIDTH = 640;
+const WEEKLY_SCHEDULE_DRAWER_WIDTH = 1180;
 const WINDOW_HEIGHT = 900;
 const ADD_CALL_DEFAULT_HEIGHT = 746.14;
 const DRAWER_LABEL = "drawer";
@@ -726,6 +727,7 @@ export default function App() {
     return stored === "false" ? false : true;
   });
   const floatingWindowRef = useRef<Window | null>(null);
+  const drawerModeRef = useRef<"call-detail" | "weekly-schedule" | null>(null);
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [dashboard, setDashboard] = useState<DashboardSnapshot | null>(null);
   const [dashboardLoading, setDashboardLoading] = useState(false);
@@ -2424,6 +2426,7 @@ export default function App() {
     const setup = async () => {
       const unlisten = await listen("drawer-closed", () => {
         setIsAddCallOpen(false);
+        drawerModeRef.current = null;
       });
       return () => unlisten();
     };
@@ -4214,9 +4217,12 @@ export default function App() {
         const pos = await drawer.outerPosition();
         const panelSideSetting = localStorage.getItem(PANEL_SIDE_KEY);
         const side = panelSideSetting === "left" || panelSideSetting === "right" ? panelSideSetting : "right";
-        const targetX = side === "right" ? pos.x - WINDOW_WIDTH : pos.x + WINDOW_WIDTH;
+        const drawerWidth =
+          drawerModeRef.current === "weekly-schedule" ? WEEKLY_SCHEDULE_DRAWER_WIDTH : WINDOW_WIDTH;
+        const targetX = side === "right" ? pos.x - drawerWidth : pos.x + drawerWidth;
         await animateWindowX(drawer, pos.x, targetX, pos.y);
         await drawer.close();
+        drawerModeRef.current = null;
       } else if (isDrawerWindow) {
         const win = getCurrentWindow();
         await win.close();
@@ -4264,6 +4270,7 @@ export default function App() {
       openAddCallDrawer();
       return;
     }
+    drawerModeRef.current = mode === "weekly-schedule" ? "weekly-schedule" : "call-detail";
     try {
       let drawer: WebviewWindow | null = null;
       try {
@@ -4275,17 +4282,31 @@ export default function App() {
       const pos = await win.outerPosition();
       const size = await win.outerSize();
       const height = size.height;
+      const drawerWidth = mode === "weekly-schedule" ? WEEKLY_SCHEDULE_DRAWER_WIDTH : WINDOW_WIDTH;
       const url = `${window.location.origin}?drawer=${mode}${
         callId ? `&callId=${encodeURIComponent(callId)}` : ""
       }${edit ? "&edit=1" : ""}`;
       const title = mode === "weekly-schedule" ? "Weekly Schedule" : "Call Details";
       const targetX =
-        panelSide === "right" ? pos.x - WINDOW_WIDTH : pos.x + size.width;
+        panelSide === "right" ? pos.x - drawerWidth : pos.x + size.width;
       const startX =
-        panelSide === "right" ? targetX - WINDOW_WIDTH : targetX + WINDOW_WIDTH;
+        panelSide === "right" ? targetX - drawerWidth : targetX + drawerWidth;
       if (drawer) {
         try {
-          await drawer.emit('tauri://navigate', { url });          await animateWindowX(drawer, startX, targetX, pos.y);
+          const maybeNavigate = (drawer as any).navigate;
+          if (typeof maybeNavigate === "function") {
+            await maybeNavigate.call(drawer, url);
+          } else {
+            await drawer.emit("tauri://navigate", { url });
+          }
+          await drawer.setSize(new LogicalSize(drawerWidth, height));
+          await drawer.setSizeConstraints({
+            minWidth: drawerWidth,
+            maxWidth: drawerWidth,
+            minHeight: 400,
+            maxHeight: height,
+          });
+          await animateWindowX(drawer, startX, targetX, pos.y);
           setIsAddCallOpen(false);
           return;
         } catch {
@@ -4297,10 +4318,10 @@ export default function App() {
         title,
         x: startX,
         y: pos.y,
-        width: WINDOW_WIDTH,
+        width: drawerWidth,
         height,
-        minWidth: WINDOW_WIDTH,
-        maxWidth: WINDOW_WIDTH,
+        minWidth: drawerWidth,
+        maxWidth: drawerWidth,
         minHeight: 400,
         maxHeight: height,
         resizable: true,
@@ -4314,8 +4335,8 @@ export default function App() {
       });
       newDrawer.once("tauri://created", async () => {
         await newDrawer.setSizeConstraints({
-          minWidth: WINDOW_WIDTH,
-          maxWidth: WINDOW_WIDTH,
+          minWidth: drawerWidth,
+          maxWidth: drawerWidth,
           minHeight: 400,
           maxHeight: height,
         });
@@ -4487,13 +4508,15 @@ export default function App() {
       const pos = await win.outerPosition();
       const size = await win.outerSize();
       const height = size.height;
+      const drawerWidth =
+        drawerModeRef.current === "weekly-schedule" ? WEEKLY_SCHEDULE_DRAWER_WIDTH : WINDOW_WIDTH;
       const drawerX =
-        panelSide === "right" ? pos.x - WINDOW_WIDTH : pos.x + size.width;
+        panelSide === "right" ? pos.x - drawerWidth : pos.x + size.width;
       await drawer.setPosition(new LogicalPosition(drawerX, pos.y));
-      await drawer.setSize(new LogicalSize(WINDOW_WIDTH, height));
+      await drawer.setSize(new LogicalSize(drawerWidth, height));
       await drawer.setSizeConstraints({
-        minWidth: WINDOW_WIDTH,
-        maxWidth: WINDOW_WIDTH,
+        minWidth: drawerWidth,
+        maxWidth: drawerWidth,
         minHeight: 400,
         maxHeight: height,
       });
