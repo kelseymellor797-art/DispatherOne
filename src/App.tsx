@@ -655,6 +655,7 @@ const endOfMonth = (value: Date) => {
 
 const PANEL_SIDE_KEY = "dispatcherone.panelSide";
 const ALWAYS_ON_TOP_KEY = "dispatcherone.alwaysOnTop";
+const NAV_COLLAPSED_KEY = "dispatcherone.navCollapsed";
 const WINDOW_WIDTH = 640;
 const WINDOW_HEIGHT = 900;
 const DRAWER_LABEL = "drawer";
@@ -711,7 +712,10 @@ export default function App() {
   const showHeaderActions = !isReportWindow;
 
   const [activeIndex, setActiveIndex] = useState(initialIndex);
-  const [isCollapsed] = useState(true);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    const stored = localStorage.getItem(NAV_COLLAPSED_KEY);
+    return stored === "true";
+  });
   const [panelSide, setPanelSide] = useState<"left" | "right">(() => {
     const stored = localStorage.getItem(PANEL_SIDE_KEY);
     return stored === "left" || stored === "right" ? stored : "right";
@@ -2332,6 +2336,10 @@ export default function App() {
     document.body.classList.toggle("nav-collapsed", isCollapsed);
     document.body.classList.toggle("floating-mode", isFloatingWindow);
   }, [isCollapsed, isFloatingWindow]);
+
+  useEffect(() => {
+    localStorage.setItem(NAV_COLLAPSED_KEY, String(isCollapsed));
+  }, [isCollapsed]);
 
   useEffect(() => {
     if (isDrawerWindow) return;
@@ -9662,9 +9670,15 @@ export default function App() {
       {showNavigation && (
         <aside className="side-panel" aria-label="Primary navigation">
         <div className="panel-header">
-          <div className="panel-toggle" id="nav-toggle" aria-hidden="true">
-            Hide panel
-          </div>
+          <button
+            className="panel-toggle"
+            id="nav-toggle"
+            type="button"
+            aria-label={isCollapsed ? "Expand panel" : "Collapse panel"}
+            onClick={() => setIsCollapsed((prev) => !prev)}
+          >
+            {isCollapsed ? "☰" : "Hide panel"}
+          </button>
           <div className="panel-brand">
             <span className="brand-title">Dispatcher</span>
             <span className="brand-title">One</span>
@@ -9683,6 +9697,9 @@ export default function App() {
               className={`tab-button tab-${tab.id}${index === activeIndex ? " is-active" : ""}`}
               onClick={() => setActiveIndex(index)}
             >
+              <span className="tab-icon" aria-hidden="true">
+                {tab.icon}
+              </span>
               <span className="tab-label">{tab.label}</span>
             </button>
           ))}
