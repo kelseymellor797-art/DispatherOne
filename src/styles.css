@@ -3007,4 +3007,27 @@ textarea {
   border-radius: 20px !important;
   font-size: 1rem !important;
   padding: 14px 20px !important;
+  border: 2px solid #39ff14 !important;
+  box-shadow:
+    0 0 0 1px rgba(57, 255, 20, 0.35),
+    0 0 14px rgba(57, 255, 20, 0.45) !important;
+}
+
+.global-search input:focus {
+  border-color: #6dff4a !important;
+  box-shadow:
+    0 0 0 1px rgba(109, 255, 74, 0.42),
+    0 0 18px rgba(57, 255, 20, 0.62) !important;
+}
+
+/* Calls window: normalize section spacing and increase by 15%. */
+.calls-layout .calls-main,
+.calls-layout .call-grid,
+.calls-layout .pending-calls,
+.calls-layout .driver-section {
+  gap: 18px !important;
+}
+
+.calls-layout .driver-section {
+  margin-top: 0 !important;
 }
