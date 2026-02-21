@@ -3246,17 +3246,17 @@ textarea {
 .weekly-schedule-shell {
   overflow-x: hidden !important;
   overflow-y: auto !important;
-  padding: 17px !important;
+  padding: 0 !important;
   width: 100% !important;
   min-width: 0 !important;
 }
 
 .weekly-schedule-drawer {
   overflow-x: hidden !important;
-  width: 100% !important;
-  min-width: 0 !important;
-  max-width: none !important;
-  padding: 17px !important;
+  width: 1060px !important;
+  min-width: 1060px !important;
+  max-width: 1060px !important;
+  padding: 0 !important;
   box-sizing: border-box !important;
   margin-left: auto !important;
   margin-right: auto !important;
