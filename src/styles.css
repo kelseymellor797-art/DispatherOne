@@ -3031,16 +3031,3 @@ textarea {
 .calls-layout .driver-section {
   margin-top: 0 !important;
 }
-
-.calls-layout .calls-header,
-.calls-layout .driver-section-header,
-.calls-layout .call-card,
-.calls-layout .pending-call-card,
-.calls-layout .driver-card,
-.calls-layout .pending-field {
-  border-color: rgba(57, 255, 20, 0.85) !important;
-  box-shadow:
-    inset 0 0 0 1px rgba(57, 255, 20, 0.2),
-    0 0 0 1px rgba(57, 255, 20, 0.25),
-    0 0 14px rgba(57, 255, 20, 0.4) !important;
-}
