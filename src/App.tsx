@@ -3,7 +3,6 @@ import { emit, listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow, LogicalPosition, LogicalSize, monitorFromPoint, primaryMonitor } from "@tauri-apps/api/window";
-import { DriversNearby } from "./components/DriversNearby";
 type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 
 type Tab = {
@@ -789,7 +788,6 @@ export default function App() {
   const [priorityLoading, setPriorityLoading] = useState(false);
   const [geocodeTestMode, setGeocodeTestMode] = useState(false);
   const [tesseractPath, setTesseractPath] = useState("");
-  const [nearbyPickupConfirmed, setNearbyPickupConfirmed] = useState<Record<string, boolean>>({});
   const [addCallError, setAddCallError] = useState("");
   const [ocrLoading, setOcrLoading] = useState<null | "pickup" | "dropoff">(null);
   const [ocrPreview, setOcrPreview] = useState<OcrImportPreview | null>(null);
@@ -1085,7 +1083,6 @@ export default function App() {
       }
     >
   >({});
-  const [driversNearbyRefreshToken, setDriversNearbyRefreshToken] = useState(0);
   const [drawerCallDetail, setDrawerCallDetail] = useState<CallDetail | null>(null);
   const [drawerCallLoading, setDrawerCallLoading] = useState(false);
   const [drawerCallError, setDrawerCallError] = useState<string | null>(null);
@@ -2152,11 +2149,6 @@ export default function App() {
   useEffect(() => {
     void refreshDashboard();
   }, [refreshDashboard]);
-
-  useEffect(() => {
-    if (activeTabId !== "calls") return;
-    setDriversNearbyRefreshToken((prev) => prev + 1);
-  }, [dashboard, activeTabId]);
 
   useEffect(() => {
     if (activeTabId !== "daily-report") return;
@@ -6198,20 +6190,18 @@ export default function App() {
                   ) : (
                     dashboardUnassigned.map((call) => {
                         const isSelected = selectedPendingCallIds.has(call.call_id);
-                        const isLawEnforcement = call.source_type === "LAW_ENFORCEMENT";
-                        const isAaaCall = call.source_type === "AAA";
-                        const isCodCall = call.source_type === "COD";
-                        const isPpiCall = call.source_type === "PPI";
-                        const lawTimestamp = isLawEnforcement ? formatIsoTime(call.status_updated_at) : null;
-                        const codServiceType = isCodCall ? extractNoteValue(call.notes, "Service Type") : null;
-                        const codServiceChargeRaw = isCodCall
-                          ? call.pricing_total != null
-                            ? formatCurrency(call.pricing_total)
-                            : extractNoteValue(call.pricing_notes, "Service Charge")
-                          : null;
-                        const codTimestamp = isCodCall ? formatIsoTime(call.created_at) : null;
-                        const ppiReason = isPpiCall ? extractNoteValue(call.notes, "Service Type") : null;
-                        const ppiTimestamp = isPpiCall ? formatIsoTime(call.created_at) : null;
+                        const workTypeId =
+                          extractNoteValue(call.notes, "Work Type ID") ??
+                          extractNoteValue(call.notes, "Work Type") ??
+                          "--";
+                        const towMilesText =
+                          callTowMilesLoading[call.call_id]
+                            ? "Calculating..."
+                            : callTowMiles[call.call_id] != null
+                              ? `${callTowMiles[call.call_id].toFixed(1)} mi`
+                              : callTowMilesError[call.call_id]
+                                ? "Unavailable"
+                                : "--";
                         return (
                           <article
                             key={call.call_id}
@@ -6293,263 +6283,43 @@ export default function App() {
                                 </button>
                               </div>
                             </header>
-                            <div className="pending-call-grid">
-                              {isAaaCall ? (
-                                <>
-                                  <div className="pending-field">
-                                    <span>Call Type</span>
-                                    <span>{call.source_type}</span>
-                                  </div>
-                                  <div className="pending-field">
-                                    <span>Call #</span>
-                                    <span>{call.external_call_number ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field">
-                                    <span>Work type ID</span>
-                                    <span>{extractNoteValue(call.notes, "Work Type") ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field">
-                                    <span>Car type</span>
-                                    <span>{call.vehicle_description ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field">
-                                    <span>Contact ID</span>
-                                    <span>{call.contact_id ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field">
-                                    <span>Phone</span>
-                                    <span>{call.callback_phone ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field">
-                                    <span>Membership</span>
-                                    <span>{call.membership_level ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field">
-                                    <span>Total tow miles</span>
-                                    <span>
-                                      {callTowMilesLoading[call.call_id]
-                                        ? "Calculating..."
-                                        : callTowMiles[call.call_id] != null
-                                          ? `${callTowMiles[call.call_id].toFixed(1)} mi`
-                                          : callTowMilesError[call.call_id]
-                                            ? "Unavailable"
-                                            : "--"}
-                                    </span>
-                                  </div>
-                                  <div className="pending-field wide">
-                                    <span>Pick up</span>
-                                    <span>{call.pickup_address ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field wide">
-                                    <span>Drop off</span>
-                                    <span>{call.dropoff_address ?? "--"}</span>
-                                  </div>
-                                </>
-                              ) : isLawEnforcement ? (
-                                <>
-                                  <div className="pending-field">
-                                    <span>Call type</span>
-                                    <span>{call.law_agency ?? "Law Enforcement"}</span>
-                                  </div>
-                                  <div className="pending-field">
-                                    <span>Log #</span>
-                                    <span>{call.external_call_number ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field">
-                                    <span>Pick up</span>
-                                    <span>{call.pickup_address ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field">
-                                    <span>Timestamp</span>
-                                    <span>{lawTimestamp ?? "--"}</span>
-                                  </div>
-                                </>
-                              ) : isCodCall ? (
-                                <>
-                                  <div className="pending-field">
-                                    <span>Contact ID</span>
-                                    <span>{call.contact_id ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field">
-                                    <span>Phone number</span>
-                                    <span>{call.callback_phone ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field">
-                                    <span>Service type</span>
-                                    <span>{codServiceType ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field">
-                                    <span>Service charge</span>
-                                    <span>{codServiceChargeRaw ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field wide">
-                                    <span>Car type</span>
-                                    <span>{call.vehicle_description ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field wide">
-                                    <span>Pick up location</span>
-                                    <span>{call.pickup_address ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field wide">
-                                    <span>Drop off location</span>
-                                    <span>{call.dropoff_address ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field">
-                                    <span>Total tow miles</span>
-                                    <span>
-                                      {callTowMilesLoading[call.call_id]
-                                        ? "Calculating..."
-                                        : callTowMiles[call.call_id] != null
-                                          ? `${callTowMiles[call.call_id].toFixed(1)} mi`
-                                          : callTowMilesError[call.call_id]
-                                            ? "Unavailable"
-                                            : "--"}
-                                    </span>
-                                  </div>
-                                  <div className="pending-field">
-                                    <span>Timestamp</span>
-                                    <span>{codTimestamp ?? "--"}</span>
-                                  </div>
-                                </>
-                              ) : isPpiCall ? (
-                                <>
-                                  <div className="pending-field">
-                                    <span>Authorized by</span>
-                                    <span>{call.contact_id ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field">
-                                    <span>Phone number</span>
-                                    <span>{call.callback_phone ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field wide">
-                                    <span>Car type</span>
-                                    <span>{call.vehicle_description ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field wide">
-                                    <span>Pick up location</span>
-                                    <span>{call.pickup_address ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field wide">
-                                    <span>Reason</span>
-                                    <span>{ppiReason ?? "--"}</span>
-                                  </div>
-                                  <div className="pending-field">
-                                    <span>Timestamp</span>
-                                    <span>{ppiTimestamp ?? "--"}</span>
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  <div className="pending-field">
-                                    <span>Call Type</span>
-                                    <span>{call.source_type}</span>
-                                  </div>
-                                  {isCodCall ? null : (
-                                    <div className="pending-field wide">
-                                      <span>Call ID # / LE Agency</span>
-                                      <span>{call.external_call_number ?? call.law_agency ?? "--"}</span>
-                                    </div>
-                                  )}
-                                  <div className="pending-field wide">
-                                    <span>Pick up</span>
-                                    <span>{call.pickup_address ?? "--"}</span>
-                                  </div>
-                                  {isLawEnforcement ? null : (
-                                    <>
-                                      <div className="pending-field wide">
-                                        <span>Drop off</span>
-                                        <span>{call.dropoff_address ?? "--"}</span>
-                                      </div>
-                                      <div className="pending-field">
-                                        <span>Total tow miles</span>
-                                        <span>
-                                          {callTowMilesLoading[call.call_id]
-                                            ? "Calculating..."
-                                            : callTowMiles[call.call_id] != null
-                                              ? `${callTowMiles[call.call_id].toFixed(1)} mi`
-                                              : callTowMilesError[call.call_id]
-                                                ? "Unavailable"
-                                                : "--"}
-                                        </span>
-                                      </div>
-                                      {isCodCall ? null : (
-                                        <div className="pending-field">
-                                          <span>Membership</span>
-                                          <span>{call.membership_level ?? "--"}</span>
-                                        </div>
-                                      )}
-                                      <div className="pending-field">
-                                        <span>Car type</span>
-                                        <span>{call.vehicle_description ?? "--"}</span>
-                                      </div>
-                                      <div className="pending-field">
-                                        <span>Contact ID</span>
-                                        <span>{call.contact_id ?? "--"}</span>
-                                      </div>
-                                      <div className="pending-field">
-                                        <span>Phone</span>
-                                        <span>{call.callback_phone ?? "--"}</span>
-                                      </div>
-                                    </>
-                                  )}
-                                </>
-                              )}
-                            </div>
-                            {call.source_type === "AAA"
-                              ? isCallOverMiles(call.call_id, call.membership_level)
-                                ? renderAaaFlaggedChecklist(call.call_id)
-                                : null
-                              : null}
-                            <div className="pending-nearby">
-                              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-                                <button
-                                  type="button"
-                                  className="ghost-button"
-                                  onClick={() => {
-                                    const pickup = call.pickup_address?.trim();
-                                    if (!pickup) {
-                                      showToast("Pickup address is required.");
-                                      return;
-                                    }
-                                    void invoke("google_geocode_validate_store", { address: pickup })
-                                      .then(() => {
-                                        setNearbyPickupConfirmed((prev) => ({
-                                          ...prev,
-                                          [call.call_id]: true,
-                                        }));
-                                        showToast("Pickup validated for nearby drivers.");
-                                      })
-                                      .catch((error) => {
-                                        const message = error instanceof Error ? error.message : String(error);
-                                        showToast(message);
-                                      });
-                                  }}
-                                >
-                                  Validate pickup for nearby
-                                </button>
-                                <button
-                                  type="button"
-                                  className="ghost-button"
-                                  onClick={() => {
-                                    setNearbyPickupConfirmed((prev) => ({
-                                      ...prev,
-                                      [call.call_id]: true,
-                                    }));
-                                    showToast("Pickup confirmed as-is for nearby drivers.");
-                                  }}
-                                >
-                                  Use pickup as-is
-                                </button>
-                                <span style={{ opacity: 0.7, fontSize: 12 }}>
-                                  {nearbyPickupConfirmed[call.call_id] ? "Pickup confirmed" : "Pickup not confirmed"}
-                                </span>
+                            <div className="pending-call-grid pending-call-grid--double">
+                              <div className="pending-column">
+                                <div className="pending-field">
+                                  <span>Call #</span>
+                                  <span>{call.external_call_number ?? call.call_id.slice(0, 8)}</span>
+                                </div>
+                                <div className="pending-field">
+                                  <span>Work Type ID</span>
+                                  <span>{workTypeId}</span>
+                                </div>
+                                <div className="pending-field">
+                                  <span>Car Type</span>
+                                  <span>{call.vehicle_description ?? "--"}</span>
+                                </div>
+                                <div className="pending-field wide">
+                                  <span>Pick Up</span>
+                                  <span>{call.pickup_address ?? "--"}</span>
+                                </div>
+                                <div className="pending-field wide">
+                                  <span>Drop Off</span>
+                                  <span>{call.dropoff_address ?? "--"}</span>
+                                </div>
                               </div>
-                              <DriversNearby
-                                callId={call.call_id}
-                                max={6}
-                                refreshToken={driversNearbyRefreshToken}
-                                canRefresh={Boolean(nearbyPickupConfirmed[call.call_id])}
-                              />
+                              <div className="pending-column">
+                                <div className="pending-field">
+                                  <span>Call Type</span>
+                                  <span>{call.source_type}</span>
+                                </div>
+                                <div className="pending-field">
+                                  <span>Membership</span>
+                                  <span>{call.membership_level ?? "--"}</span>
+                                </div>
+                                <div className="pending-field">
+                                  <span>Total Tow Miles</span>
+                                  <span>{towMilesText}</span>
+                                </div>
+                              </div>
                             </div>
                           </article>
                         );

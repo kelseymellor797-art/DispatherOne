@@ -1659,6 +1659,18 @@ body {
   gap: 12px;
 }
 
+.pending-call-grid--double {
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.pending-column {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  align-content: start;
+}
+
 .pending-field {
   display: grid;
   gap: 6px;
@@ -1678,6 +1690,10 @@ body {
 
 .pending-field.wide {
   grid-column: span 2;
+}
+
+.pending-call-grid--double .pending-field.wide {
+  grid-column: auto;
 }
 
 .pending-field select {
