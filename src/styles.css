@@ -3167,8 +3167,8 @@ textarea {
 }
 
 .add-call-divider {
-  height: 1px;
-  background: rgba(255, 255, 255, 0.24);
+  height: 1.5px;
+  background: #ffffff;
   margin: 2px 0;
 }
 
