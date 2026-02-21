@@ -1,13 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type FormEvent } from "react";
 import { emit, listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow, LogicalPosition, LogicalSize, monitorFromPoint, primaryMonitor } from "@tauri-apps/api/window";
-import {
-  isRegistered,
-  register as registerGlobalShortcut,
-  unregister as unregisterGlobalShortcut,
-} from "@tauri-apps/plugin-global-shortcut";
 type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 
 type Tab = {
@@ -675,6 +670,16 @@ const isEscapeKey = (event: KeyboardEvent): boolean =>
   event.key === "Escape" || event.key === "Esc" || event.code === "Escape";
 const isEscapeReactEvent = (event: React.KeyboardEvent): boolean =>
   event.key === "Escape" || event.key === "Esc" || event.code === "Escape";
+
+type WindowRole = "main" | "drawer" | "floating" | "report";
+type WindowIntentState = { escCloseRequestId: number };
+type WindowIntentAction = { type: "ESC_CLOSE_REQUESTED" };
+const windowIntentReducer = (state: WindowIntentState, action: WindowIntentAction): WindowIntentState => {
+  if (action.type === "ESC_CLOSE_REQUESTED") {
+    return { escCloseRequestId: state.escCloseRequestId + 1 };
+  }
+  return state;
+};
 const FISH_WILDLIFE_TOW_FEE = 210;
 const FISH_WILDLIFE_STORAGE_DAILY = 40;
 const FISH_WILDLIFE_GATE_FEE = 105;
@@ -725,6 +730,14 @@ export default function App() {
   const isReportWindow = Boolean(reportTabId);
   const isDrawerWindow =
     drawerMode === "new-call" || drawerMode === "call-detail" || drawerMode === "weekly-schedule";
+  const windowRole: WindowRole = isDrawerWindow
+    ? "drawer"
+    : isFloatingWindow
+      ? "floating"
+      : isReportWindow
+        ? "report"
+        : "main";
+  const [windowIntent, dispatchWindowIntent] = useReducer(windowIntentReducer, { escCloseRequestId: 0 });
   const showNavigation = !isReportWindow;
   const showHeaderActions = !isReportWindow;
 
@@ -777,6 +790,16 @@ export default function App() {
   const [reportStartDate, setReportStartDate] = useState(() => dateKey(new Date()));
   const [reportEndDate, setReportEndDate] = useState(() => dateKey(new Date()));
   const [selectedDriverId, setSelectedDriverId] = useState<string | null>(null);
+  const windowLayoutPolicy = useMemo(
+    () => ({
+      weekly: {
+        drawerWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
+        gridWidth: WEEKLY_SCHEDULE_GRID_WIDTH,
+        gridMargin: WEEKLY_SCHEDULE_GRID_MARGIN,
+      },
+    }),
+    []
+  );
   const [driverEditMode, setDriverEditMode] = useState<Record<string, boolean>>({});
   const [driverEditDrafts, setDriverEditDrafts] = useState<Record<string, DriverCardDraft>>({});
   const [dragPayload, setDragPayload] = useState<{
@@ -2535,23 +2558,22 @@ export default function App() {
 
   const handleNonMainEscapeCapture = useCallback(
     (event: React.KeyboardEvent) => {
-      if (!(isDrawerWindow || isFloatingWindow || isReportWindow)) return;
+      if (windowRole === "main") return;
       if (!isEscapeReactEvent(event)) return;
       event.preventDefault();
       event.stopPropagation();
-      void closeCurrentNonMainWindow();
+      dispatchWindowIntent({ type: "ESC_CLOSE_REQUESTED" });
     },
-    [isDrawerWindow, isFloatingWindow, isReportWindow, closeCurrentNonMainWindow]
+    [windowRole]
   );
 
   useEffect(() => {
-    if (isTauri) return;
-    if (!(isDrawerWindow || isFloatingWindow || isReportWindow)) return;
+    if (windowRole === "main") return;
     const onEscapeCapture = (event: KeyboardEvent) => {
       if (!isEscapeKey(event)) return;
       event.preventDefault();
       event.stopPropagation();
-      void closeCurrentNonMainWindow();
+      dispatchWindowIntent({ type: "ESC_CLOSE_REQUESTED" });
     };
     document.addEventListener("keydown", onEscapeCapture, true);
     document.addEventListener("keyup", onEscapeCapture, true);
@@ -2563,34 +2585,13 @@ export default function App() {
       window.removeEventListener("keydown", onEscapeCapture, true);
       window.removeEventListener("keyup", onEscapeCapture, true);
     };
-  }, [isTauri, isDrawerWindow, isFloatingWindow, isReportWindow, closeCurrentNonMainWindow]);
+  }, [windowRole]);
 
   useEffect(() => {
-    if (!isTauri) return;
-    if (!(isDrawerWindow || isFloatingWindow || isReportWindow)) return;
-    let active = true;
-    const setup = async () => {
-      const shortcut = "Escape";
-      try {
-        if (await isRegistered(shortcut)) {
-          await unregisterGlobalShortcut(shortcut);
-        }
-        await registerGlobalShortcut(shortcut, () => {
-          if (!active) return;
-          void closeCurrentNonMainWindow();
-        });
-      } catch {
-        // ignore global shortcut failures
-      }
-    };
-    void setup();
-    return () => {
-      active = false;
-      void unregisterGlobalShortcut("Escape").catch(() => {
-        // ignore
-      });
-    };
-  }, [isTauri, isDrawerWindow, isFloatingWindow, isReportWindow, closeCurrentNonMainWindow]);
+    if (windowRole === "main") return;
+    if (windowIntent.escCloseRequestId === 0) return;
+    void closeCurrentNonMainWindow();
+  }, [windowRole, windowIntent.escCloseRequestId, closeCurrentNonMainWindow]);
 
   useEffect(() => {
     const handleKeydown = (event: KeyboardEvent) => {
@@ -5192,9 +5193,9 @@ export default function App() {
                 padding: 0,
                 overflowX: "hidden",
                 overflowY: "hidden",
-                width: WEEKLY_SCHEDULE_DRAWER_WIDTH,
-                minWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
-                maxWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
+                width: windowLayoutPolicy.weekly.drawerWidth,
+                minWidth: windowLayoutPolicy.weekly.drawerWidth,
+                maxWidth: windowLayoutPolicy.weekly.drawerWidth,
                 margin: "0 auto",
               }
             : undefined
@@ -5204,15 +5205,15 @@ export default function App() {
           <div
             className="detail-card call-detail-card weekly-schedule-drawer"
             style={{
-              width: WEEKLY_SCHEDULE_DRAWER_WIDTH,
-              minWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
-              maxWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
+              width: windowLayoutPolicy.weekly.drawerWidth,
+              minWidth: windowLayoutPolicy.weekly.drawerWidth,
+              maxWidth: windowLayoutPolicy.weekly.drawerWidth,
               padding: 0,
               marginLeft: "auto",
               marginRight: "auto",
             }}
           >
-            <header className="call-detail-header" style={{ width: WEEKLY_SCHEDULE_GRID_WIDTH, margin: "0 auto" }}>
+            <header className="call-detail-header" style={{ width: windowLayoutPolicy.weekly.gridWidth, margin: "0 auto" }}>
               <h3>Weekly Schedule</h3>
               <div className="call-detail-actions">
                 <button className="ghost-button" onClick={() => void closeDrawerWindow()}>
@@ -5220,7 +5221,7 @@ export default function App() {
                 </button>
               </div>
             </header>
-            <div className="schedule-toolbar" style={{ width: WEEKLY_SCHEDULE_GRID_WIDTH, margin: "0 auto" }}>
+            <div className="schedule-toolbar" style={{ width: windowLayoutPolicy.weekly.gridWidth, margin: "0 auto" }}>
               <div>
                 <p className="content-kicker">Employee schedule</p>
                 <h2 className="schedule-title">Week of {weekLabel}</h2>
@@ -5253,9 +5254,9 @@ export default function App() {
             <section
               className="schedule-section"
               style={{
-                width: WEEKLY_SCHEDULE_DRAWER_WIDTH,
+                width: windowLayoutPolicy.weekly.drawerWidth,
                 margin: "0 auto",
-                padding: WEEKLY_SCHEDULE_GRID_MARGIN,
+                padding: windowLayoutPolicy.weekly.gridMargin,
                 boxSizing: "border-box",
               }}
             >
