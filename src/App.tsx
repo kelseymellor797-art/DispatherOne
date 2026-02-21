@@ -707,7 +707,8 @@ export default function App() {
   );
   const isFloatingWindow = Boolean(floatingTabId);
   const isReportWindow = Boolean(reportTabId);
-  const isDrawerWindow = drawerMode === "new-call" || drawerMode === "call-detail";
+  const isDrawerWindow =
+    drawerMode === "new-call" || drawerMode === "call-detail" || drawerMode === "weekly-schedule";
   const showNavigation = !isReportWindow;
   const showHeaderActions = !isReportWindow;
 
@@ -4247,7 +4248,7 @@ export default function App() {
   };
 
   const openDrawerWindow = async (
-    mode: "new-call" | "call-detail",
+    mode: "new-call" | "call-detail" | "weekly-schedule",
     callId?: string,
     edit?: boolean
   ) => {
@@ -4277,7 +4278,7 @@ export default function App() {
       const url = `${window.location.origin}?drawer=${mode}${
         callId ? `&callId=${encodeURIComponent(callId)}` : ""
       }${edit ? "&edit=1" : ""}`;
-      const title = "Call Details";
+      const title = mode === "weekly-schedule" ? "Weekly Schedule" : "Call Details";
       const targetX =
         panelSide === "right" ? pos.x - WINDOW_WIDTH : pos.x + size.width;
       const startX =
@@ -4986,9 +4987,82 @@ export default function App() {
     const drawerCall = drawerLookup?.call ?? null;
     const drawerDriver = drawerLookup?.driver ?? null;
     const drawerDetailCall = drawerCallDetail?.call ?? null;
+    const weekStart = startOfWeek(new Date(nowMs));
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekStart.getDate() + 6);
+    const weekLabel = `${weekStart.toLocaleDateString()} - ${weekEnd.toLocaleDateString()}`;
     return (
       <div className="drawer-shell">
-        {drawerMode === "new-call" ? (
+        {drawerMode === "weekly-schedule" ? (
+          <div className="detail-card call-detail-card">
+            <header className="call-detail-header">
+              <h3>Weekly Schedule</h3>
+              <div className="call-detail-actions">
+                <button className="ghost-button" onClick={() => void closeDrawerWindow()}>
+                  Close
+                </button>
+              </div>
+            </header>
+            <section className="schedule-section">
+              <h2 className="schedule-title">Week of {weekLabel}</h2>
+              <div className="schedule-grid">
+                <div className="schedule-grid-header">
+                  <div className="schedule-cell schedule-cell--head schedule-cell--corner">
+                    Driver
+                  </div>
+                  {days.map((day) => (
+                    <div key={day} className="schedule-cell schedule-cell--head">
+                      {day}
+                    </div>
+                  ))}
+                </div>
+                {scheduleLoading ? (
+                  <div className="schedule-empty">Loading schedule???</div>
+                ) : scheduleError ? (
+                  <div className="schedule-empty">{scheduleError}</div>
+                ) : scheduleDrivers.length === 0 ? (
+                  <div className="schedule-empty">No drivers yet.</div>
+                ) : (
+                  scheduleDrivers.map((employee) => (
+                    <div key={employee.id} className="schedule-row">
+                      <div className="schedule-cell schedule-cell--name">{employee.display_name}</div>
+                      {days.map((day) => {
+                        const dayIndex = days.indexOf(day);
+                        const targetDate = new Date(weekStart);
+                        targetDate.setDate(weekStart.getDate() + dayIndex);
+                        const shift = scheduleShiftLookup.get(`${employee.id}-${dateKey(targetDate)}`);
+                        return (
+                          <div key={day} className="schedule-cell">
+                            {shift ? (
+                              <button
+                                type="button"
+                                className="shift-block"
+                                onClick={() => {
+                                  setEditingShift(shift);
+                                  setEditDraft({
+                                    start: isoToTimeInput(shift.shift_start),
+                                    end: isoToTimeInput(shift.shift_end),
+                                    lunchStart: isoToTimeInput(shift.lunch_start),
+                                    lunchEnd: isoToTimeInput(shift.lunch_end),
+                                    lunchOverride: false,
+                                  });
+                                }}
+                              >
+                                {formatIsoRange(shift.shift_start, shift.shift_end)}
+                              </button>
+                            ) : (
+                              <span className="shift-empty">???</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          </div>
+        ) : drawerMode === "new-call" ? (
           <div className="detail-card call-detail-card">
             <header className="call-detail-header add-call-header">
               <h3>Add Call</h3>
@@ -8554,11 +8628,18 @@ export default function App() {
 
         <section className="driver-section">
             <div className="driver-section-header">
-              <h2>Active Drivers</h2>
+              <h2>DRIVERS</h2>
               <div className="driver-section-actions">
-            <span className="driver-section-meta">
-              <span className="count-badge">{dashboardDrivers.length}</span>
-            </span>
+                <button
+                  className="ghost-button"
+                  type="button"
+                  onClick={() => void openDrawerWindow("weekly-schedule")}
+                >
+                  Weekly Schedule
+                </button>
+                <span className="driver-section-meta">
+                  <span className="count-badge">{dashboardDrivers.length}</span>
+                </span>
               </div>
             </div>
           <div className="driver-grid">
