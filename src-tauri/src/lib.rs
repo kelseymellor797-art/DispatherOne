@@ -4,14 +4,36 @@ mod google_maps;
 mod models;
 
 use tauri::Manager;
+use tauri::Emitter;
 use tauri::menu::{Menu, PredefinedMenuItem, Submenu};
+use tauri_plugin_global_shortcut::ShortcutState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     dotenvy::dotenv().ok();
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_shortcut("CommandOrControl+Shift+G")
+                .expect("invalid global shortcut")
+                .with_handler(|app, shortcut, event| {
+                    if event.state == ShortcutState::Pressed {
+                        println!(
+                            "[shortcut] fired {} ({})",
+                            shortcut.to_string(),
+                            shortcut.id()
+                        );
+                        if let Err(error) = app.emit(
+                            "global-shortcut-fired",
+                            serde_json::json!({ "accelerator": shortcut.to_string() }),
+                        ) {
+                            eprintln!("[shortcut] emit failed: {error}");
+                        }
+                    }
+                })
+                .build(),
+        )
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             // Set up window positioning

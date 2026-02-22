@@ -657,10 +657,11 @@ const ALWAYS_ON_TOP_KEY = "dispatcherone.alwaysOnTop";
 const NAV_COLLAPSED_KEY = "dispatcherone.navCollapsed";
 const WINDOW_WIDTH = 640;
 const WEEKLY_SCHEDULE_GRID_WIDTH = 1060;
-const WEEKLY_SCHEDULE_GRID_MARGIN = 8;
-const WEEKLY_SCHEDULE_DRAWER_WIDTH = WEEKLY_SCHEDULE_GRID_WIDTH + WEEKLY_SCHEDULE_GRID_MARGIN * 2;
+const WEEKLY_SCHEDULE_WINDOW_PADDING = 96;
+const WEEKLY_SCHEDULE_DRAWER_WIDTH = WEEKLY_SCHEDULE_GRID_WIDTH + WEEKLY_SCHEDULE_WINDOW_PADDING;
 const WEEKLY_SCHEDULE_BASE_WIDTH = WEEKLY_SCHEDULE_DRAWER_WIDTH;
 const WEEKLY_SCHEDULE_DRAWER_HEIGHT = 760;
+const WEEKLY_SCHEDULE_ADJUSTED_HEIGHT = WEEKLY_SCHEDULE_DRAWER_HEIGHT + WEEKLY_SCHEDULE_WINDOW_PADDING;
 const WEEKLY_SCHEDULE_Y_OFFSET = 84;
 const DRAWER_SCREEN_MARGIN = 16;
 const WINDOW_HEIGHT = 900;
@@ -2487,61 +2488,35 @@ export default function App() {
     if (!isTauri) return;
     if (!isDrawerWindow || drawerMode !== "weekly-schedule") return;
     const applyWeeklyDrawerSize = async () => {
-      try {
-        const win = getCurrentWindow();
-        await win.setSize(new LogicalSize(WEEKLY_SCHEDULE_DRAWER_WIDTH, WEEKLY_SCHEDULE_DRAWER_HEIGHT));
-        await win.setSizeConstraints({
-          minWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
-          maxWidth: WEEKLY_SCHEDULE_DRAWER_WIDTH,
-          minHeight: 400,
-          maxHeight: WEEKLY_SCHEDULE_DRAWER_HEIGHT,
-        });
-      } catch {
-        // Ignore window errors when not running in Tauri.
-      }
-    };
-    void applyWeeklyDrawerSize();
-  }, [isTauri, isDrawerWindow, drawerMode]);
-
-  useEffect(() => {
-    if (!isTauri) return;
-    if (!isDrawerWindow || drawerMode !== "weekly-schedule") return;
-    let active = true;
-    let resizeObserver: ResizeObserver | null = null;
-    const fitWeeklyDrawerToGrid = async () => {
-      if (!active) return;
       const grid = weeklyGridRef.current;
       if (!grid) return;
-      const measuredGridWidth = Math.ceil(grid.scrollWidth);
-      const measuredDrawerWidth = measuredGridWidth + WEEKLY_SCHEDULE_GRID_MARGIN * 2;
-      const targetDrawerWidth = Math.max(WEEKLY_SCHEDULE_DRAWER_WIDTH, measuredDrawerWidth);
+
+      const INCH = 48; // pixels
+      const totalPadding = INCH * 2;
+
+      const measuredGridWidth = Math.ceil(grid.scrollWidth); // current grid width
+      const measuredGridHeight = Math.ceil(grid.scrollHeight); // current grid height
+
+      const targetDrawerWidth = measuredGridWidth + totalPadding;
+      const targetDrawerHeight = measuredGridHeight + totalPadding;
+
+      // Set window size to fit grid + padding
       try {
         const win = getCurrentWindow();
-        await win.setSize(new LogicalSize(targetDrawerWidth, WEEKLY_SCHEDULE_DRAWER_HEIGHT));
+        await win.setSize(new LogicalSize(targetDrawerWidth, targetDrawerHeight));
         await win.setSizeConstraints({
-          minWidth: targetDrawerWidth,
-          maxWidth: targetDrawerWidth,
+          minWidth: Math.max(560, targetDrawerWidth - 220),
           minHeight: 400,
-          maxHeight: WEEKLY_SCHEDULE_DRAWER_HEIGHT,
         });
       } catch {
         // ignore measurement sizing failures
       }
     };
-
     const frame = window.requestAnimationFrame(() => {
-      void fitWeeklyDrawerToGrid();
-      if (weeklyGridRef.current) {
-        resizeObserver = new ResizeObserver(() => {
-          void fitWeeklyDrawerToGrid();
-        });
-        resizeObserver.observe(weeklyGridRef.current);
-      }
+      void applyWeeklyDrawerSize();
     });
     return () => {
-      active = false;
       window.cancelAnimationFrame(frame);
-      if (resizeObserver) resizeObserver.disconnect();
     };
   }, [isTauri, isDrawerWindow, drawerMode]);
 
@@ -4400,7 +4375,7 @@ export default function App() {
           drawerWidth = Math.min(drawerWidth, maxDrawerWidth);
           if (mode === "weekly-schedule") {
             drawerHeight = Math.min(
-              WEEKLY_SCHEDULE_DRAWER_HEIGHT,
+              WEEKLY_SCHEDULE_ADJUSTED_HEIGHT,
               Math.max(460, monitor.size.height - DRAWER_SCREEN_MARGIN * 2)
             );
           }
@@ -4442,12 +4417,19 @@ export default function App() {
             await drawer.emit("tauri://navigate", { url });
           }
           await drawer.setSize(new LogicalSize(drawerWidth, drawerHeight));
-          await drawer.setSizeConstraints({
-            minWidth: drawerWidth,
-            maxWidth: drawerWidth,
-            minHeight: 400,
-            maxHeight: drawerHeight,
-          });
+          if (mode === "weekly-schedule") {
+            await drawer.setSizeConstraints({
+              minWidth: Math.max(560, drawerWidth - 220),
+              minHeight: 400,
+            });
+          } else {
+            await drawer.setSizeConstraints({
+              minWidth: drawerWidth,
+              maxWidth: drawerWidth,
+              minHeight: 400,
+              maxHeight: drawerHeight,
+            });
+          }
           await animateWindowX(drawer, startX, targetX, targetY);
           setIsAddCallOpen(false);
           return;
@@ -4468,12 +4450,12 @@ export default function App() {
         y: targetY,
         width: drawerWidth,
         height: drawerHeight,
-        minWidth: drawerWidth,
-        maxWidth: drawerWidth,
+        minWidth: mode === "weekly-schedule" ? Math.max(560, drawerWidth - 220) : drawerWidth,
+        maxWidth: mode === "weekly-schedule" ? undefined : drawerWidth,
         minHeight: 400,
-        maxHeight: drawerHeight,
+        maxHeight: mode === "weekly-schedule" ? undefined : drawerHeight,
         resizable: true,
-        decorations: false,
+        decorations: mode === "weekly-schedule" ? true : false,
         alwaysOnTop,
         visible: true,
       });
@@ -4482,12 +4464,19 @@ export default function App() {
         alert("Failed to open the drawer window.");
       });
       newDrawer.once("tauri://created", async () => {
-        await newDrawer.setSizeConstraints({
-          minWidth: drawerWidth,
-          maxWidth: drawerWidth,
-          minHeight: 400,
-          maxHeight: drawerHeight,
-        });
+        if (mode === "weekly-schedule") {
+          await newDrawer.setSizeConstraints({
+            minWidth: Math.max(560, drawerWidth - 220),
+            minHeight: 400,
+          });
+        } else {
+          await newDrawer.setSizeConstraints({
+            minWidth: drawerWidth,
+            maxWidth: drawerWidth,
+            minHeight: 400,
+            maxHeight: drawerHeight,
+          });
+        }
         await animateWindowX(newDrawer, startX, targetX, targetY);
         await newDrawer.show();
         await newDrawer.setFocus();
@@ -4652,6 +4641,7 @@ export default function App() {
     try {
       const drawer = await WebviewWindow.getByLabel(DRAWER_LABEL);
       if (!drawer) return;
+      if (drawerModeRef.current === "weekly-schedule") return;
       const win = getCurrentWindow();
       const pos = await win.outerPosition();
       const size = await win.outerSize();
@@ -4659,38 +4649,11 @@ export default function App() {
       let drawerHeight = size.height;
       let drawerX = panelSide === "right" ? pos.x - drawerWidth : pos.x + size.width;
       let drawerY = pos.y;
-      const monitor = (await monitorFromPoint(pos.x, pos.y)) ?? (await primaryMonitor());
-      if (drawerModeRef.current === "weekly-schedule") {
-        if (monitor) {
-          drawerWidth = Math.min(
-            WEEKLY_SCHEDULE_DRAWER_WIDTH,
-            Math.max(560, monitor.size.width - 4)
-          );
-          drawerHeight = Math.min(
-            WEEKLY_SCHEDULE_DRAWER_HEIGHT,
-            Math.max(460, monitor.size.height - DRAWER_SCREEN_MARGIN * 2)
-          );
-          const rawX = pos.x + size.width - WEEKLY_SCHEDULE_BASE_WIDTH;
-          const rawY = pos.y + WEEKLY_SCHEDULE_Y_OFFSET;
-          const minX = monitor.position.x;
-          const maxX = monitor.position.x + monitor.size.width - drawerWidth;
-          const minY = monitor.position.y;
-          const maxY = monitor.position.y + monitor.size.height - drawerHeight;
-          drawerX = Math.max(minX, Math.min(maxX, rawX));
-          drawerY = Math.max(minY, Math.min(maxY, rawY));
-        } else {
-          drawerWidth = WEEKLY_SCHEDULE_DRAWER_WIDTH;
-          drawerHeight = WEEKLY_SCHEDULE_DRAWER_HEIGHT;
-          drawerX = pos.x + size.width - drawerWidth;
-          drawerY = pos.y + WEEKLY_SCHEDULE_Y_OFFSET;
-        }
-      } else {
-        const drawerSize = await drawer.outerSize();
-        drawerWidth = drawerSize.width;
-        drawerHeight = size.height;
-        drawerX = panelSide === "right" ? pos.x - drawerWidth : pos.x + size.width;
-        drawerY = pos.y;
-      }
+      const drawerSize = await drawer.outerSize();
+      drawerWidth = drawerSize.width;
+      drawerHeight = size.height;
+      drawerX = panelSide === "right" ? pos.x - drawerWidth : pos.x + size.width;
+      drawerY = pos.y;
       await drawer.setPosition(new LogicalPosition(drawerX, drawerY));
       await drawer.setSize(new LogicalSize(drawerWidth, drawerHeight));
       await drawer.setSizeConstraints({
@@ -5243,7 +5206,10 @@ export default function App() {
             </div>
             <section className="schedule-section">
               <h2 className="section-title">Drivers</h2>
-              <div ref={weeklyGridRef} className="schedule-grid weekly-schedule-grid">
+              <div
+                ref={weeklyGridRef}
+                className="schedule-grid weekly-schedule-grid"
+              >
                 <div className="schedule-grid-header">
                   <div className="schedule-cell schedule-cell--head schedule-cell--corner">
                     Driver

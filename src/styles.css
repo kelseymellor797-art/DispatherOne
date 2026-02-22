@@ -3294,3 +3294,50 @@ textarea {
 .window-shell--report {
   outline: none !important;
 }
+
+/* Final containment overrides: prevent flex/grid blowout and keep scrolling local. */
+html,
+body,
+#root {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}
+
+.app-shell,
+.window-shell--main,
+.window-shell--drawer,
+.window-shell--floating,
+.window-shell--report {
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+}
+
+.content,
+.content-body,
+.drawer-shell,
+.calls-layout,
+.calls-main,
+.call-grid,
+.driver-grid,
+.schedule-grid {
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+
+.content-body {
+  overflow: auto !important;
+}
+
+.calls-layout {
+  overflow: visible !important;
+}
+
+.weekly-schedule-grid {
+  padding: 48px; /* 1 inch padding all around */
+  box-sizing: border-box;
+}
