@@ -2252,7 +2252,7 @@ export default function App() {
     setScheduleLoading(true);
     try {
       const driversList = (await invoke("driver_list")) as DriverRecord[];
-      const weekStart = startOfWeek(new Date(nowMs));
+      const weekStart = startOfWeek(new Date());
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
       const shiftsList = (await invoke("shift_list", {
@@ -2267,7 +2267,7 @@ export default function App() {
     } finally {
       setScheduleLoading(false);
     }
-  }, [isTauri, nowMs]);
+  }, [isTauri]);
 
   useEffect(() => {
     void refreshSchedule();
@@ -3185,9 +3185,9 @@ export default function App() {
     await refreshDriverReport();
   };
 
-  const handleClearWeek = () => {
+  function handleClearWeek() {
     setIsClearWeekOpen(true);
-  };
+  }
 
   const handleConfirmClearWeek = async () => {
     if (!isTauri) return;
@@ -5265,6 +5265,370 @@ export default function App() {
                 )}
               </div>
             </section>
+            {isAddEmployeeOpen && (
+              <div className="modal-backdrop" role="dialog" aria-modal="true">
+                <div className="modal-card">
+                  <header className="modal-header">
+                    <h3>Add Driver</h3>
+                    <button className="modal-close" onClick={() => setIsAddEmployeeOpen(false)}>
+                      Close
+                    </button>
+                  </header>
+                  <form className="modal-body" onSubmit={handleAddEmployee}>
+                    <label className="form-field">
+                      Name
+                      <input
+                        type="text"
+                        value={employeeDraft.name}
+                        ref={employeeNameInputRef}
+                        onChange={(event) =>
+                          setEmployeeDraft((prev) => ({ ...prev, name: event.target.value }))
+                        }
+                        placeholder="Driver name"
+                        required
+                      />
+                    </label>
+                    <label className="form-field">
+                      Role
+                      <input type="text" value="Driver" readOnly />
+                    </label>
+                    <div className="modal-actions">
+                      <button
+                        type="button"
+                        className="ghost-button"
+                        onClick={() => setIsAddEmployeeOpen(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button type="submit" className="primary-button">
+                        Save
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+            {isDeleteEmployeeOpen && (
+              <div className="modal-backdrop" role="dialog" aria-modal="true">
+                <div className="modal-card">
+                  <header className="modal-header">
+                    <h3>Delete Driver</h3>
+                    <button className="modal-close" onClick={() => setIsDeleteEmployeeOpen(false)}>
+                      Close
+                    </button>
+                  </header>
+                  <div className="modal-body">
+                    {scheduleDrivers.length === 0 ? (
+                      <div className="modal-summary">No drivers to delete.</div>
+                    ) : (
+                      <>
+                        <label className="form-field">
+                          Driver
+                          <select
+                            value={deleteEmployeeId}
+                            onChange={(event) => setDeleteEmployeeId(event.target.value)}
+                            required
+                          >
+                            {scheduleDrivers.map((employee) => (
+                              <option key={employee.id} value={employee.id}>
+                                {employee.display_name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <div className="modal-summary">
+                          {`Are you sure you want to delete ${
+                            scheduleDrivers.find((employee) => employee.id === deleteEmployeeId)
+                              ?.display_name ?? "this driver"
+                          }?`}
+                        </div>
+                        <div className="modal-actions modal-actions--split">
+                          <button
+                            className="ghost-button"
+                            onClick={() => setIsDeleteEmployeeOpen(false)}
+                          >
+                            No
+                          </button>
+                          <button
+                            className="danger-button"
+                            onClick={() => {
+                              if (!deleteEmployeeId) return;
+                              handleDeleteEmployee(deleteEmployeeId);
+                              setIsDeleteEmployeeOpen(false);
+                            }}
+                          >
+                            Yes, delete
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            {isAddShiftOpen && (
+              <div className="modal-backdrop" role="dialog" aria-modal="true">
+                <div className="modal-card">
+                  <header className="modal-header">
+                    <h3>Add Shift</h3>
+                    <button className="modal-close" onClick={() => setIsAddShiftOpen(false)}>
+                      Close
+                    </button>
+                  </header>
+                  <form className="modal-body" onSubmit={handleAddShift}>
+                    <label className="form-field">
+                      Driver
+                      <select
+                        value={shiftDraft.employeeId}
+                        ref={shiftEmployeeSelectRef}
+                        onChange={(event) =>
+                          setShiftDraft((prev) => ({ ...prev, employeeId: event.target.value }))
+                        }
+                        required
+                      >
+                        <option value="" disabled>
+                          Select driver
+                        </option>
+                        {scheduleDrivers.map((employee) => (
+                          <option key={employee.id} value={employee.id}>
+                            {employee.display_name}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="form-field">
+                      Days
+                      <div className="day-picker">
+                        {days.map((day) => {
+                          const isSelected = shiftDraft.days.includes(day);
+                          return (
+                            <button
+                              key={day}
+                              type="button"
+                              className={`day-chip${isSelected ? " is-selected" : ""}`}
+                              onClick={() =>
+                                setShiftDraft((prev) => {
+                                  const exists = prev.days.includes(day);
+                                  return {
+                                    ...prev,
+                                    days: exists
+                                      ? prev.days.filter((value) => value !== day)
+                                      : [...prev.days, day],
+                                  };
+                                })
+                              }
+                            >
+                              <span className="day-label">{day}</span>
+                              {isSelected && <span className="day-check">✓</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </label>
+                    <label className="form-field">
+                      Lunch override
+                      <select
+                        value={shiftDraft.lunchOverride ? "yes" : "no"}
+                        onChange={(event) =>
+                          setShiftDraft((prev) => ({
+                            ...prev,
+                            lunchOverride: event.target.value === "yes",
+                          }))
+                        }
+                      >
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    </label>
+                    <div className="form-row">
+                      <label className="form-field">
+                        Start
+                        <input
+                          type="time"
+                          value={shiftDraft.start}
+                          onChange={(event) =>
+                            setShiftDraft((prev) => ({ ...prev, start: event.target.value }))
+                          }
+                          required
+                        />
+                      </label>
+                      <label className="form-field">
+                        End
+                        <input
+                          type="time"
+                          value={shiftDraft.end}
+                          onChange={(event) =>
+                            setShiftDraft((prev) => ({ ...prev, end: event.target.value }))
+                          }
+                          required
+                        />
+                      </label>
+                    </div>
+                    {shiftDraft.lunchOverride ? (
+                      <div className="form-row">
+                        <label className="form-field">
+                          Lunch start
+                          <input
+                            type="time"
+                            value={shiftDraft.lunchStart}
+                            onChange={(event) =>
+                              setShiftDraft((prev) => ({ ...prev, lunchStart: event.target.value }))
+                            }
+                            required
+                          />
+                        </label>
+                        <label className="form-field">
+                          Lunch end
+                          <input
+                            type="time"
+                            value={shiftDraft.lunchEnd}
+                            onChange={(event) =>
+                              setShiftDraft((prev) => ({ ...prev, lunchEnd: event.target.value }))
+                            }
+                            required
+                          />
+                        </label>
+                      </div>
+                    ) : null}
+                    <div className="modal-actions">
+                      <button
+                        type="button"
+                        className="ghost-button"
+                        onClick={() => setIsAddShiftOpen(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button type="submit" className="primary-button">
+                        Save
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+            {editingShift && (
+              <div className="modal-backdrop" role="dialog" aria-modal="true">
+                <div className="modal-card">
+                  <header className="modal-header">
+                    <h3>Edit Shift</h3>
+                    <button className="modal-close" onClick={() => setEditingShift(null)}>
+                      Close
+                    </button>
+                  </header>
+                  <form className="modal-body" onSubmit={handleEditShiftSave}>
+                    <div className="form-row">
+                      <label className="form-field">
+                        Start
+                        <input
+                          type="time"
+                          value={editDraft.start}
+                          onChange={(event) =>
+                            setEditDraft((prev) => ({ ...prev, start: event.target.value }))
+                          }
+                          required
+                        />
+                      </label>
+                      <label className="form-field">
+                        End
+                        <input
+                          type="time"
+                          value={editDraft.end}
+                          onChange={(event) =>
+                            setEditDraft((prev) => ({ ...prev, end: event.target.value }))
+                          }
+                          required
+                        />
+                      </label>
+                    </div>
+                    <label className="form-field">
+                      Lunch override
+                      <select
+                        value={editDraft.lunchOverride ? "yes" : "no"}
+                        onChange={(event) =>
+                          setEditDraft((prev) => ({
+                            ...prev,
+                            lunchOverride: event.target.value === "yes",
+                          }))
+                        }
+                      >
+                        <option value="no">No</option>
+                        <option value="yes">Yes</option>
+                      </select>
+                    </label>
+                    {editDraft.lunchOverride ? (
+                      <div className="form-row">
+                        <label className="form-field">
+                          Lunch start
+                          <input
+                            type="time"
+                            value={editDraft.lunchStart}
+                            onChange={(event) =>
+                              setEditDraft((prev) => ({ ...prev, lunchStart: event.target.value }))
+                            }
+                            required
+                          />
+                        </label>
+                        <label className="form-field">
+                          Lunch end
+                          <input
+                            type="time"
+                            value={editDraft.lunchEnd}
+                            onChange={(event) =>
+                              setEditDraft((prev) => ({ ...prev, lunchEnd: event.target.value }))
+                            }
+                            required
+                          />
+                        </label>
+                      </div>
+                    ) : null}
+                    <div className="modal-actions modal-actions--split">
+                      <button type="button" className="danger-button" onClick={handleDeleteShift}>
+                        Delete
+                      </button>
+                      <div className="modal-actions-right">
+                        <button
+                          type="button"
+                          className="ghost-button"
+                          onClick={() => setEditingShift(null)}
+                        >
+                          Cancel
+                        </button>
+                        <button type="submit" className="primary-button">
+                          Save
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
+            {isClearWeekOpen && (
+              <div className="modal-backdrop" role="dialog" aria-modal="true">
+                <div className="modal-card">
+                  <header className="modal-header">
+                    <h3>Clear week</h3>
+                    <button className="modal-close" onClick={handleCancelClearWeek}>
+                      Close
+                    </button>
+                  </header>
+                  <div className="modal-body">
+                    <div className="modal-summary">
+                      This will remove all shifts for the current week.
+                    </div>
+                    <div className="modal-actions modal-actions--split">
+                      <button className="danger-button" onClick={handleConfirmClearWeek}>
+                        Clear shifts
+                      </button>
+                      <div className="modal-actions-right">
+                        <button className="ghost-button" onClick={handleCancelClearWeek}>
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ) : drawerMode === "new-call" ? (
           <div className="detail-card call-detail-card">
