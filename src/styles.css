@@ -3341,3 +3341,43 @@ body,
   padding: 48px; /* 1 inch padding all around */
   box-sizing: border-box;
 }
+
+/* Modal clipping fix for weekly-schedule drawer. */
+.window-shell--drawer .modal-backdrop {
+  display: grid !important;
+  place-items: start center !important;
+  overflow: auto !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+}
+
+.window-shell--drawer .modal-card {
+  width: min(520px, 100%) !important;
+  max-width: 100% !important;
+  max-height: min(calc(100dvh - 48px), calc(100% - 2px)) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+@supports not (height: 100dvh) {
+  .window-shell--drawer .modal-card {
+    max-height: min(calc(100vh - 48px), calc(100% - 2px)) !important;
+  }
+}
+
+.window-shell--drawer .modal-header {
+  flex: 0 0 auto !important;
+}
+
+.window-shell--drawer .modal-body {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: auto !important;
+}
+
+/* Keep fixed modals viewport-bound in weekly schedule drawer. */
+.detail-card.call-detail-card.weekly-schedule-drawer {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
