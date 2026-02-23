@@ -669,6 +669,10 @@ body {
   background: rgba(9, 16, 26, 0.95);
 }
 
+.schedule-row:first-of-type .schedule-cell--name {
+  border-top: 1px solid rgba(120, 160, 200, 0.2);
+}
+
 .schedule-cell--corner {
   left: 0;
   z-index: 3;
@@ -3238,16 +3242,17 @@ textarea {
 
 /* Weekly schedule drawer: keep grid at native size while allowing wider window. */
 .weekly-schedule-drawer .weekly-schedule-grid {
-  grid-template-columns: 220px repeat(7, 120px) !important;
+  grid-template-columns: 220px repeat(7, minmax(0, 1fr)) !important;
   width: 100% !important;
   min-width: 100% !important;
   max-width: 100% !important;
   margin: 0 !important;
+  overflow-x: hidden !important;
 }
 
 .weekly-schedule-shell {
   overflow-x: hidden !important;
-  overflow-y: hidden !important;
+  overflow-y: auto !important;
   padding: 0 !important;
   width: 100% !important;
   min-width: 0 !important;
@@ -3255,6 +3260,7 @@ textarea {
 
 .weekly-schedule-drawer {
   overflow-x: hidden !important;
+  overflow-y: auto !important;
   width: 1076px !important;
   min-width: 1076px !important;
   max-width: 1076px !important;
@@ -3288,6 +3294,7 @@ textarea {
   min-width: 1076px !important;
   max-width: 1076px !important;
   margin: 0 auto !important;
+  overflow-y: auto !important;
 }
 
 .window-shell--floating,
@@ -3338,7 +3345,7 @@ body,
 }
 
 .weekly-schedule-grid {
-  padding: 48px; /* 1 inch padding all around */
+  padding: 0 !important;
   box-sizing: border-box;
 }
 
@@ -3376,8 +3383,8 @@ body,
   overflow: auto !important;
 }
 
-/* Keep fixed modals viewport-bound in weekly schedule drawer. */
-.detail-card.call-detail-card.weekly-schedule-drawer {
+/* Keep fixed modals viewport-bound in weekly schedule drawer while a modal is open. */
+.detail-card.call-detail-card.weekly-schedule-drawer:has(.modal-backdrop) {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
