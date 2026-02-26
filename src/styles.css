@@ -835,6 +835,31 @@ body {
   font-size: 1.05rem;
 }
 
+.driver-header-assigned {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  text-align: right;
+}
+
+.driver-header-assigned-label {
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  line-height: 1.1;
+}
+
+.driver-header-assigned-value {
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.driver-header-assigned-value .driver-edit-input {
+  width: 120px;
+}
+
 .driver-sub {
   display: block;
   color: var(--muted);
@@ -907,11 +932,35 @@ body {
 }
 
 .driver-meta-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 0.85rem;
+  display: grid;
+  gap: 8px;
+  align-items: start;
+}
+
+.driver-meta-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px 20px;
+}
+
+.driver-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 14px 20px;
+}
+
+.driver-column {
+  display: grid;
+  gap: 22px;
+  align-content: start;
+}
+
+.driver-meta-row > span:first-child {
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: var(--muted);
+  line-height: 1.1;
 }
 
 .driver-meta-row-location {
@@ -922,9 +971,11 @@ body {
 
 .driver-meta-value {
   color: var(--text);
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 6px;
+  font-size: 1.02rem;
+  min-width: 0;
 }
 
 .driver-location {
@@ -1050,6 +1101,7 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
 .driver-action-button {
   opacity: 1;
   cursor: pointer;

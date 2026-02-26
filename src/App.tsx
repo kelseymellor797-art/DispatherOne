@@ -499,6 +499,20 @@ const lienFeeForDays = (days: number | null, override: boolean) => {
 
 const sanitizeAlphanumeric = (value: string) => value.replace(/[^a-z0-9 ]/gi, "");
 
+const setWindowSizeConstraintsSafe = async (
+  win: { setSizeConstraints: (constraints: Record<string, number | undefined>) => Promise<void> },
+  constraints: Record<string, number | undefined>
+) => {
+  try {
+    await win.setSizeConstraints(constraints);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes("set_size_constraints not allowed")) {
+      console.warn("setSizeConstraints failed", message);
+    }
+  }
+};
+
 const extractContactId = (...values: Array<string | null | undefined>) => {
   const joined = values.filter(Boolean).join(" | ");
   if (!joined) return "";
@@ -2409,17 +2423,21 @@ export default function App() {
       }
     };
     const setup = async () => {
-      await applyForMonitor();
-      const unlisten = await win.onMoved(() => {
-        void applyForMonitor();
-      });
-      const unlistenResize = await win.onResized(() => {
-        void applyForMonitor();
-      });
-      return () => {
-        unlisten();
-        unlistenResize();
-      };
+      try {
+        await applyForMonitor();
+        const unlisten = await win.onMoved(() => {
+          void applyForMonitor();
+        });
+        const unlistenResize = await win.onResized(() => {
+          void applyForMonitor();
+        });
+        return () => {
+          unlisten();
+          unlistenResize();
+        };
+      } catch {
+        return () => undefined;
+      }
     };
     const cleanupPromise = setup();
     return () => {
@@ -2504,7 +2522,7 @@ export default function App() {
       try {
         const win = getCurrentWindow();
         await win.setSize(new LogicalSize(targetDrawerWidth, targetDrawerHeight));
-        await win.setSizeConstraints({
+        await setWindowSizeConstraintsSafe(win, {
           minWidth: Math.max(560, targetDrawerWidth - 220),
           minHeight: 400,
         });
@@ -2582,7 +2600,52 @@ export default function App() {
 
   useEffect(() => {
     const handleKeydown = (event: KeyboardEvent) => {
-      if (isEscapeKey(event)) return;
+      if (isEscapeKey(event)) {
+        if (isDrawerWindow || isFloatingWindow || isReportWindow) return;
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (ocrConfirm) {
+          setOcrConfirm(null);
+          return;
+        }
+        if (editingShift) {
+          setEditingShift(null);
+          return;
+        }
+        if (isAddShiftOpen) {
+          setIsAddShiftOpen(false);
+          return;
+        }
+        if (isDeleteEmployeeOpen) {
+          setIsDeleteEmployeeOpen(false);
+          return;
+        }
+        if (isAddEmployeeOpen) {
+          setIsAddEmployeeOpen(false);
+          return;
+        }
+        if (isClearWeekOpen) {
+          setIsClearWeekOpen(false);
+          return;
+        }
+        if (isAddCallOpen) {
+          setIsAddCallOpen(false);
+          return;
+        }
+        if (floatingDetail) {
+          setFloatingDetail(null);
+          setFloatingDetailCall(null);
+          setFloatingDetailError(null);
+          setFloatingDetailLoading(false);
+          return;
+        }
+        if (searchOpen) {
+          setSearchOpen(false);
+          return;
+        }
+        return;
+      }
 
       if (!(event.ctrlKey || event.metaKey)) return;
       if (event.altKey) return;
@@ -2659,7 +2722,22 @@ export default function App() {
 
     window.addEventListener("keydown", handleKeydown);
     return () => window.removeEventListener("keydown", handleKeydown);
-  }, [activeTabId, isDrawerWindow, isFloatingWindow, isReportWindow, closeCurrentNonMainWindow]);
+  }, [
+    activeTabId,
+    isDrawerWindow,
+    isFloatingWindow,
+    isReportWindow,
+    closeCurrentNonMainWindow,
+    ocrConfirm,
+    editingShift,
+    isAddShiftOpen,
+    isDeleteEmployeeOpen,
+    isAddEmployeeOpen,
+    isClearWeekOpen,
+    isAddCallOpen,
+    floatingDetail,
+    searchOpen,
+  ]);
 
   useEffect(() => {
     if (!isAddShiftOpen) return;
@@ -2896,6 +2974,12 @@ export default function App() {
       window.removeEventListener("keyup", handleKey);
     };
   }, [floatingDetail, closeFloatingDetail]);
+
+  useEffect(() => {
+    if (activeTabId === "calls") return;
+    if (!floatingDetail) return;
+    closeFloatingDetail();
+  }, [activeTabId, floatingDetail, closeFloatingDetail]);
 
   useEffect(() => {
     setDriverLocationDrafts((prev) => {
@@ -4418,12 +4502,12 @@ export default function App() {
           }
           await drawer.setSize(new LogicalSize(drawerWidth, drawerHeight));
           if (mode === "weekly-schedule") {
-            await drawer.setSizeConstraints({
+            await setWindowSizeConstraintsSafe(drawer, {
               minWidth: Math.max(560, drawerWidth - 220),
               minHeight: 400,
             });
           } else {
-            await drawer.setSizeConstraints({
+            await setWindowSizeConstraintsSafe(drawer, {
               minWidth: drawerWidth,
               maxWidth: drawerWidth,
               minHeight: 400,
@@ -4465,12 +4549,12 @@ export default function App() {
       });
       newDrawer.once("tauri://created", async () => {
         if (mode === "weekly-schedule") {
-          await newDrawer.setSizeConstraints({
+          await setWindowSizeConstraintsSafe(newDrawer, {
             minWidth: Math.max(560, drawerWidth - 220),
             minHeight: 400,
           });
         } else {
-          await newDrawer.setSizeConstraints({
+          await setWindowSizeConstraintsSafe(newDrawer, {
             minWidth: drawerWidth,
             maxWidth: drawerWidth,
             minHeight: 400,
@@ -4656,7 +4740,7 @@ export default function App() {
       drawerY = pos.y;
       await drawer.setPosition(new LogicalPosition(drawerX, drawerY));
       await drawer.setSize(new LogicalSize(drawerWidth, drawerHeight));
-      await drawer.setSizeConstraints({
+      await setWindowSizeConstraintsSafe(drawer, {
         minWidth: drawerWidth,
         maxWidth: drawerWidth,
         minHeight: 400,
@@ -9101,7 +9185,7 @@ export default function App() {
             ) : (
               dashboardDrivers
                 .filter((driver) => driver.availability_status !== "ON_LUNCH")
-                .map((driver, index) => {
+                .map((driver) => {
                 const todayShift = scheduleShiftLookup.get(
                   `${driver.driver_id}-${dateKey(new Date(nowMs))}`
                 );
@@ -9176,128 +9260,198 @@ export default function App() {
                           )}
                         </span>
                       </div>
-                      <div className="driver-card-tags">
-                        <button
-                          className="driver-edit-button"
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            if (!isEditing) {
-                              handleDriverEditStart(driver, todayShift);
-                            }
-                          }}
-                          disabled={isEditing}
-                        >
-                          {isEditing ? "Editing" : "Edit"}
-                        </button>
-                        <span className="driver-index">#{String(index + 1).padStart(2, "0")}</span>
-                      </div>
-                    </div>
-                    <div className="driver-meta-row">
-                      <span>Assigned Truck</span>
-                      <span className="driver-meta-value">
-                        {isEditing ? (
-                          <input
-                            className="driver-edit-input"
-                            value={draft?.truckNumber ?? ""}
-                            onClick={(event) => event.stopPropagation()}
-                            onChange={(event) =>
-                              handleDriverEditDraftChange(
-                                driver.driver_id,
-                                "truckNumber",
-                                event.target.value
-                              )
-                            }
-                            placeholder="--"
-                          />
-                        ) : (
-                          driver.current_truck?.truck_number ?? "--"
-                        )}
-                      </span>
-                    </div>
-                    <div className="driver-meta-row">
-                      <span>Suggested Lunch</span>
-                      <span className="driver-meta-value">
-                        {todayShift ? (
-                          isEditing ? (
+                      <div className="driver-header-assigned">
+                        <span className="driver-header-assigned-label">Truck #</span>
+                        <span className="driver-header-assigned-value">
+                          {isEditing ? (
                             <input
-                              type="time"
-                              className="driver-edit-input driver-time-input"
-                              value={draft?.lunchStart ?? ""}
+                              className="driver-edit-input"
+                              value={draft?.truckNumber ?? ""}
                               onClick={(event) => event.stopPropagation()}
                               onChange={(event) =>
                                 handleDriverEditDraftChange(
                                   driver.driver_id,
-                                  "lunchStart",
+                                  "truckNumber",
                                   event.target.value
                                 )
                               }
+                              placeholder="--"
                             />
                           ) : (
-                            formatIsoTime(todayShift.lunch_start)
-                          )
-                        ) : (
-                          "--"
-                        )}
-                      </span>
+                            driver.current_truck?.truck_number ?? "--"
+                          )}
+                        </span>
+                      </div>
                     </div>
-                    <div className="driver-meta-row">
-                      <span>Lunch Remaining</span>
-                      <span className="driver-meta-value">
-                        {getLunchRemaining(
-                          driver,
-                          todayShift,
-                          nowMs,
-                          pauseLunchAt[driver.driver_id],
-                          lunchStartAt[driver.driver_id]
-                        )}
-                      </span>
+                    <div className="driver-columns">
+                      <div className="driver-column">
+                        <div className="driver-meta-row">
+                          <span>Shift</span>
+                          <span className="driver-meta-value">
+                            {todayShift ? (
+                              isEditing ? (
+                                <span className="driver-time-range">
+                                  <input
+                                    type="time"
+                                    className="driver-edit-input driver-time-input"
+                                    value={draft?.shiftStart ?? ""}
+                                    onClick={(event) => event.stopPropagation()}
+                                    onChange={(event) =>
+                                      handleDriverEditDraftChange(
+                                        driver.driver_id,
+                                        "shiftStart",
+                                        event.target.value
+                                      )
+                                    }
+                                  />
+                                  <span>-</span>
+                                  <input
+                                    type="time"
+                                    className="driver-edit-input driver-time-input"
+                                    value={draft?.shiftEnd ?? ""}
+                                    onClick={(event) => event.stopPropagation()}
+                                    onChange={(event) =>
+                                      handleDriverEditDraftChange(
+                                        driver.driver_id,
+                                        "shiftEnd",
+                                        event.target.value
+                                      )
+                                    }
+                                  />
+                                </span>
+                              ) : (
+                                formatIsoRange(todayShift.shift_start, todayShift.shift_end)
+                              )
+                            ) : (
+                              "--"
+                            )}
+                          </span>
+                        </div>
+                        <div className="driver-meta-row">
+                          <span>Lunch started</span>
+                          <span className="driver-meta-value">
+                            {lunchStartAt[driver.driver_id]
+                              ? formatIsoTime(lunchStartAt[driver.driver_id])
+                              : driver.availability_status === "ON_LUNCH"
+                                ? formatIsoTime(driver.availability_updated_at)
+                                : "--"}
+                          </span>
+                        </div>
+                        <div className="driver-meta-row">
+                          <span>Status</span>
+                          <span className="driver-meta-value">
+                            {isEditing ? draft?.status ?? driver.availability_status : driver.availability_status}
+                          </span>
+                        </div>
+                        {isEditing ? (
+                          <div className="driver-column-actions">
+                            <button
+                              className="driver-action-button driver-card-action-btn"
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                void handleDriverCardSave(driver, todayShift);
+                              }}
+                            >
+                              Save
+                            </button>
+                            <button
+                              className="driver-action-button driver-card-action-btn"
+                              type="button"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleDriverEditCancel(driver.driver_id);
+                              }}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : null}
+                      </div>
+                      <div className="driver-column">
+                        <div className="driver-meta-row">
+                          <span>Suggested Lunch</span>
+                          <span className="driver-meta-value">
+                            {todayShift ? (
+                              isEditing ? (
+                                <input
+                                  type="time"
+                                  className="driver-edit-input driver-time-input"
+                                  value={draft?.lunchStart ?? ""}
+                                  onClick={(event) => event.stopPropagation()}
+                                  onChange={(event) =>
+                                    handleDriverEditDraftChange(
+                                      driver.driver_id,
+                                      "lunchStart",
+                                      event.target.value
+                                    )
+                                  }
+                                />
+                              ) : (
+                                formatIsoTime(todayShift.lunch_start)
+                              )
+                            ) : (
+                              "--"
+                            )}
+                          </span>
+                        </div>
+                        <div className="driver-meta-row">
+                          <span>Lunch end</span>
+                          <span className="driver-meta-value">
+                            {todayShift ? (
+                              isEditing ? (
+                                <input
+                                  type="time"
+                                  className="driver-edit-input driver-time-input"
+                                  value={draft?.lunchEnd ?? ""}
+                                  onClick={(event) => event.stopPropagation()}
+                                  onChange={(event) =>
+                                    handleDriverEditDraftChange(
+                                      driver.driver_id,
+                                      "lunchEnd",
+                                      event.target.value
+                                    )
+                                  }
+                                />
+                              ) : (
+                                formatIsoTime(todayShift.lunch_end)
+                              )
+                            ) : (
+                              "--"
+                            )}
+                          </span>
+                        </div>
+                        <div className="driver-meta-row">
+                          <span className="driver-meta-value">
+                            <select
+                              className="driver-status-select"
+                              value={isEditing ? draft?.status ?? driver.availability_status : driver.availability_status}
+                              onClick={(event) => event.stopPropagation()}
+                              onChange={(event) => {
+                                if (isEditing) {
+                                  handleDriverEditDraftChange(
+                                    driver.driver_id,
+                                    "status",
+                                    event.target.value
+                                  );
+                                } else {
+                                  handleAvailabilityChange(driver.driver_id, event.target.value);
+                                }
+                              }}
+                            >
+                              <option value="AVAILABLE">AVAILABLE</option>
+                              <option value="ON_LUNCH">ON_LUNCH</option>
+                              <option value="BUSY">BUSY</option>
+                              <option value="OFF_SHIFT">OFF_SHIFT</option>
+                            </select>
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="driver-meta-row">
-                      <span>Lunch started</span>
-                      <span className="driver-meta-value">
-                        {lunchStartAt[driver.driver_id]
-                          ? formatIsoTime(lunchStartAt[driver.driver_id])
-                          : driver.availability_status === "ON_LUNCH"
-                            ? formatIsoTime(driver.availability_updated_at)
-                            : "--"}
-                      </span>
-                    </div>
-                    <div className="driver-meta-row">
-                      <span>Paused at</span>
-                      <span className="driver-meta-value">
-                        {driver.availability_status === "AVAILABLE" && pauseLunchAt[driver.driver_id]
-                          ? formatIsoTime(pauseLunchAt[driver.driver_id])
-                          : "--"}
-                      </span>
-                    </div>
-                    <div className="driver-actions">
-                      {isEditing ? (
-                        <>
-                          <button
-                            className="driver-action-button"
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              void handleDriverCardSave(driver, todayShift);
-                            }}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="driver-action-button"
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleDriverEditCancel(driver.driver_id);
-                            }}
-                          >
-                            Cancel
-                          </button>
-                        </>
-                      ) : (
+                    {!isEditing ? (
+                      <div className="driver-card-actions-row">
                         <button
-                          className="driver-action-button driver-action-wide"
+                          className="driver-action-button driver-card-action-btn"
                           type="button"
                           onClick={(event) => {
                             event.stopPropagation();
@@ -9306,46 +9460,19 @@ export default function App() {
                         >
                           Edit Driver
                         </button>
-                      )}
-                      {driver.availability_status === "ON_LUNCH" && !isEditing ? (
                         <button
-                          className="driver-action-button"
+                          className="driver-action-button driver-card-action-btn"
                           type="button"
                           onClick={(event) => {
                             event.stopPropagation();
-                            handleAvailabilityChange(driver.driver_id, "AVAILABLE");
+                            setDeleteEmployeeId(driver.driver_id);
+                            setIsDeleteEmployeeOpen(true);
                           }}
                         >
-                          Pause lunch
+                          Delete Driver
                         </button>
-                      ) : null}
-                      <div className="driver-action-meta">
-                        Status: {isEditing ? draft?.status ?? driver.availability_status : driver.availability_status}
                       </div>
-                      <div className="driver-action-meta">
-                        <select
-                          className="driver-status-select"
-                          value={isEditing ? draft?.status ?? driver.availability_status : driver.availability_status}
-                          onClick={(event) => event.stopPropagation()}
-                          onChange={(event) => {
-                            if (isEditing) {
-                              handleDriverEditDraftChange(
-                                driver.driver_id,
-                                "status",
-                                event.target.value
-                              );
-                            } else {
-                              handleAvailabilityChange(driver.driver_id, event.target.value);
-                            }
-                          }}
-                        >
-                          <option value="AVAILABLE">AVAILABLE</option>
-                          <option value="ON_LUNCH">ON_LUNCH</option>
-                          <option value="BUSY">BUSY</option>
-                          <option value="OFF_SHIFT">OFF_SHIFT</option>
-                        </select>
-                      </div>
-                    </div>
+                    ) : null}
                   </article>
                 );
               })
@@ -9437,8 +9564,8 @@ export default function App() {
                           handleAvailabilityChange(driver.driver_id, "AVAILABLE");
                         }}
                       >
-                          Pause lunch
-                        </button>
+                        Pause lunch
+                      </button>
                     </div>
                   </article>
                 );
