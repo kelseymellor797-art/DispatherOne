@@ -986,6 +986,70 @@ body {
   align-items: center;
 }
 
+.driver-primary-actions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.driver-card-action-btn {
+  height: 30px;
+  padding: 0 10px;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.driver-primary-action {
+  margin-top: 45px;
+}
+
+.driver-delete-action {
+  margin-top: 39px;
+}
+
+.driver-column-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.driver-card-actions-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.driver-card-actions-row .driver-card-action-btn {
+  width: 170px;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+
+.driver-card-actions-row .driver-card-action-btn:last-child {
+  margin-right: 23px;
+}
+
+.driver-card-actions-row--single {
+  justify-content: center;
+}
+
+.driver-card-actions-row--single .driver-card-action-btn:last-child {
+  margin-right: 0;
+}
+
+@media (max-width: 520px) {
+  .driver-meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .driver-columns {
+    grid-template-columns: 1fr;
+  }
+}
 .driver-action-button {
   opacity: 1;
   cursor: pointer;
@@ -1015,6 +1079,11 @@ body {
   background: rgba(7, 11, 17, 0.7);
   color: var(--text);
   padding: 6px 8px;
+}
+
+.driver-status-select option {
+  background: #0b1328;
+  color: #eaf5ff;
 }
 
 .driver-status-compact {

@@ -5168,11 +5168,6 @@ export default function App() {
           <div className="detail-card call-detail-card weekly-schedule-drawer">
             <header className="call-detail-header">
               <h3>Weekly Schedule</h3>
-              <div className="call-detail-actions">
-                <button className="ghost-button" onClick={() => void closeDrawerWindow()}>
-                  Close
-                </button>
-              </div>
             </header>
             <div className="schedule-toolbar">
               <div>
@@ -9376,192 +9371,74 @@ export default function App() {
                 const todayShift = scheduleShiftLookup.get(
                   `${driver.driver_id}-${dateKey(new Date(nowMs))}`
                 );
-                const isEditing = Boolean(driverEditMode[driver.driver_id]);
-                const draft = isEditing
-                  ? driverEditDrafts[driver.driver_id] ?? seedDriverCardDraft(driver, todayShift)
-                  : null;
                 return (
                   <article key={driver.driver_id} className="driver-card detail-card">
                     <div className="driver-card-header">
                       <div>
-                        {isEditing ? (
-                          <input
-                            className="driver-edit-input driver-name-input"
-                            value={draft?.displayName ?? ""}
-                            onClick={(event) => event.stopPropagation()}
-                            onChange={(event) =>
-                              handleDriverEditDraftChange(
-                                driver.driver_id,
-                                "displayName",
-                                event.target.value
-                              )
-                            }
-                          />
-                        ) : (
-                          <h3>{driver.display_name}</h3>
-                        )}
+                        <h3>{driver.display_name}</h3>
                         <span className="driver-sub">
                           Shift:{" "}
-                          {todayShift ? (
-                            isEditing ? (
-                              <span className="driver-time-range">
-                                <input
-                                  type="time"
-                                  className="driver-edit-input driver-time-input"
-                                  value={draft?.shiftStart ?? ""}
-                                  onClick={(event) => event.stopPropagation()}
-                                  onChange={(event) =>
-                                    handleDriverEditDraftChange(
-                                      driver.driver_id,
-                                      "shiftStart",
-                                      event.target.value
-                                    )
-                                  }
-                                />
-                                <span>–</span>
-                                <input
-                                  type="time"
-                                  className="driver-edit-input driver-time-input"
-                                  value={draft?.shiftEnd ?? ""}
-                                  onClick={(event) => event.stopPropagation()}
-                                  onChange={(event) =>
-                                    handleDriverEditDraftChange(
-                                      driver.driver_id,
-                                      "shiftEnd",
-                                      event.target.value
-                                    )
-                                  }
-                                />
-                              </span>
-                            ) : (
-                              formatIsoRange(todayShift.shift_start, todayShift.shift_end)
-                            )
-                          ) : (
-                            "--"
-                          )}
+                          {todayShift ? formatIsoRange(todayShift.shift_start, todayShift.shift_end) : "--"}
                         </span>
                       </div>
-                      <div className="driver-card-tags">
-                        <button
-                          className="driver-edit-button"
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            if (!isEditing) {
-                              handleDriverEditStart(driver, todayShift);
-                            }
-                          }}
-                          disabled={isEditing}
-                        >
-                          {isEditing ? "Editing" : "Edit"}
-                        </button>
-                        {isEditing ? (
-                          <select
-                            className="driver-status-select driver-status-compact"
-                            value={draft?.status ?? driver.availability_status}
-                            onClick={(event) => event.stopPropagation()}
-                            onChange={(event) =>
-                              handleDriverEditDraftChange(
-                                driver.driver_id,
-                                "status",
-                                event.target.value
-                              )
-                            }
-                          >
-                            <option value="AVAILABLE">AVAILABLE</option>
-                            <option value="ON_LUNCH">ON_LUNCH</option>
-                            <option value="BUSY">BUSY</option>
-                            <option value="OFF_SHIFT">OFF_SHIFT</option>
-                          </select>
-                        ) : (
-                          <span className="driver-index">On Lunch</span>
-                        )}
+                      <div className="driver-header-assigned">
+                        <span className="driver-header-assigned-label">Truck #</span>
+                        <span className="driver-header-assigned-value">
+                          {driver.current_truck?.truck_number ?? "--"}
+                        </span>
                       </div>
                     </div>
-                    <div className="driver-meta-row">
-                      <span>Assigned Truck</span>
-                      <span className="driver-meta-value">
-                        {isEditing ? (
-                          <input
-                            className="driver-edit-input"
-                            value={draft?.truckNumber ?? ""}
-                            onClick={(event) => event.stopPropagation()}
-                            onChange={(event) =>
-                              handleDriverEditDraftChange(
-                                driver.driver_id,
-                                "truckNumber",
-                                event.target.value
-                              )
-                            }
-                            placeholder="--"
-                          />
-                        ) : (
-                          driver.current_truck?.truck_number ?? "--"
-                        )}
-                      </span>
+                    <div className="driver-columns">
+                      <div className="driver-column">
+                        <div className="driver-meta-row">
+                          <span>Lunch started</span>
+                          <span className="driver-meta-value">
+                            {lunchStartAt[driver.driver_id]
+                              ? formatIsoTime(lunchStartAt[driver.driver_id])
+                              : formatIsoTime(driver.availability_updated_at)}
+                          </span>
+                        </div>
+                        <div className="driver-meta-row">
+                          <span>Lunch remaining</span>
+                          <span className="driver-meta-value">
+                            {getLunchRemaining(
+                              driver,
+                              todayShift,
+                              nowMs,
+                              pauseLunchAt[driver.driver_id],
+                              lunchStartAt[driver.driver_id]
+                            )}
+                          </span>
+                        </div>
+                        {pauseLunchAt[driver.driver_id] ? (
+                          <div className="driver-meta-row">
+                            <span>Paused at timestamp</span>
+                            <span className="driver-meta-value">
+                              {formatIsoTime(pauseLunchAt[driver.driver_id])}
+                            </span>
+                          </div>
+                        ) : null}
+                      </div>
+                      <div className="driver-column">
+                        <div className="driver-meta-row">
+                          <span>Lunch ended</span>
+                          <span className="driver-meta-value">
+                            {todayShift?.lunch_end ? formatIsoTime(todayShift.lunch_end) : "--"}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="driver-meta-row">
-                      <span>Time Remaining</span>
-                      <span className="driver-meta-value">
-                        {getLunchRemaining(
-                          driver,
-                          todayShift,
-                          nowMs,
-                          pauseLunchAt[driver.driver_id],
-                          lunchStartAt[driver.driver_id]
-                        )}
-                      </span>
-                    </div>
-                    <div className="driver-meta-row">
-                      <span>Lunch started</span>
-                      <span className="driver-meta-value">
-                        {lunchStartAt[driver.driver_id]
-                          ? formatIsoTime(lunchStartAt[driver.driver_id])
-                          : formatIsoTime(driver.availability_updated_at)}
-                      </span>
-                    </div>
-                    <div className="driver-meta-row">
-                      <span>Paused at</span>
-                      <span className="driver-meta-value">
-                        {pauseLunchAt[driver.driver_id] ? formatIsoTime(pauseLunchAt[driver.driver_id]) : "--"}
-                      </span>
-                    </div>
-                    <div className="driver-actions">
-                      {isEditing ? (
-                        <>
-                          <button
-                            className="driver-action-button"
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              void handleDriverCardSave(driver, todayShift);
-                            }}
-                          >
-                            Save
-                          </button>
-                          <button
-                            className="driver-action-button"
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleDriverEditCancel(driver.driver_id);
-                            }}
-                          >
-                            Cancel
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          className="driver-action-button"
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleAvailabilityChange(driver.driver_id, "AVAILABLE");
-                          }}
-                        >
+                    <div className="driver-card-actions-row driver-card-actions-row--single">
+                      <button
+                        className="driver-action-button driver-card-action-btn"
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleAvailabilityChange(driver.driver_id, "AVAILABLE");
+                        }}
+                      >
                           Pause lunch
                         </button>
-                      )}
                     </div>
                   </article>
                 );
