@@ -3084,6 +3084,10 @@ export default function App() {
         });
       }
     });
+  // Intentionally omitting handleAvailabilityChange and other dashboard state from deps –
+  // this effect runs every second (nowMs) and reads latest values via the stale closure,
+  // which is acceptable since handleAvailabilityChange calls invoke() and refreshDashboard().
+  // Including it would cause infinite re-renders because it is not memoized.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nowMs, isTauri]);
 
@@ -9793,7 +9797,7 @@ export default function App() {
                           <span>Lunch remaining</span>
                           <span className="driver-meta-value">
                             {lunchPausedSince[driver.driver_id] ? (
-                              <span style={{ opacity: 0.6 }}>
+                              <span className="lunch-paused-remaining">
                                 {getLunchRemaining(
                                   driver,
                                   todayShift,
@@ -9840,7 +9844,7 @@ export default function App() {
                               const addedMs = Date.now() - new Date(pausedSince).getTime();
                               const next = { ...lunchAccumPausedMs, [driver.driver_id]: (lunchAccumPausedMs[driver.driver_id] ?? 0) + addedMs };
                               setLunchAccumPausedMs(next);
-                              try { localStorage.setItem("lunchAccumPausedMs", JSON.stringify(next)); } catch { /* ignore */ }
+                              try { localStorage.setItem("lunchAccumPausedMs", JSON.stringify(next)); } catch (err) { console.warn("localStorage write failed:", err); }
                             }
                             setLunchPausedSince((prev) => { const n = { ...prev }; delete n[driver.driver_id]; return n; });
                           }}
@@ -9868,7 +9872,7 @@ export default function App() {
                           const next = { ...lunchAccumPausedMs };
                           delete next[driver.driver_id];
                           setLunchAccumPausedMs(next);
-                          try { localStorage.setItem("lunchAccumPausedMs", JSON.stringify(next)); } catch { /* ignore */ }
+                          try { localStorage.setItem("lunchAccumPausedMs", JSON.stringify(next)); } catch (err) { console.warn("localStorage write failed:", err); }
                           setLunchPausedSince((prev) => { const n = { ...prev }; delete n[driver.driver_id]; return n; });
                           void handleAvailabilityChange(driver.driver_id, "AVAILABLE");
                         }}
