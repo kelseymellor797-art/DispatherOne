@@ -359,21 +359,6 @@ const formatIsoTime = (value?: string | null) => {
   return formatTimestamp(date.getTime());
 };
 
-const formatRemainingTime = (endValue?: string | null, nowMs?: number) => {
-  if (!endValue) return "--";
-  const end = new Date(endValue);
-  if (Number.isNaN(end.getTime())) return "--";
-  const diffMs = end.getTime() - (nowMs ?? Date.now());
-  if (diffMs <= 0) return "0 min";
-  const minutes = Math.ceil(diffMs / 60000);
-  const hours = Math.floor(minutes / 60);
-  const remainingMins = minutes % 60;
-  if (hours > 0) {
-    return `${hours}h ${remainingMins}m`;
-  }
-  return `${minutes}m`;
-};
-
 const formatDurationMinutes = (minutes: number) => {
   if (!Number.isFinite(minutes)) return "--";
   const rounded = Math.max(0, Math.round(minutes));
@@ -395,31 +380,71 @@ const durationMinutesBetween = (startValue?: string | null, endValue?: string | 
   return Math.round(diffMs / 60000);
 };
 
-const getLunchRemaining = (
-  driver: DriverDashboardItem,
-  todayShift: DriverShiftRecord | undefined,
-  nowMs: number,
-  pausedAt?: string | null,
-  lunchStart?: string | null
-) => {
-  if (todayShift?.lunch_end) {
-    if (driver.availability_status === "ON_LUNCH") {
-      return formatRemainingTime(todayShift.lunch_end, nowMs);
-    }
-    if (pausedAt) {
-      const paused = new Date(pausedAt);
-      if (!Number.isNaN(paused.getTime())) {
-        return formatRemainingTime(todayShift.lunch_end, paused.getTime());
-      }
+const LUNCH_DURATION_MS = 60 * 60 * 1000;
+
+type LunchPhase = "not_started" | "running" | "paused" | "finished";
+
+const getLunchPhase = (
+  driverStatus: string,
+  elapsedMs: number,
+  pausedAt: string | undefined | null,
+  lunchStartTs: string | undefined | null
+): LunchPhase => {
+  if (elapsedMs >= LUNCH_DURATION_MS) return "finished";
+  if (driverStatus === "ON_LUNCH") return "running";
+  if (pausedAt && lunchStartTs) return "paused";
+  if (lunchStartTs) return "finished";
+  return "not_started";
+};
+
+const computeLunchRemainingMs = (
+  isRunning: boolean,
+  elapsedMs: number,
+  lunchStartTs: string | undefined | null,
+  nowMs: number
+): number => {
+  let total = elapsedMs;
+  if (isRunning && lunchStartTs) {
+    const start = new Date(lunchStartTs).getTime();
+    if (!Number.isNaN(start)) {
+      total += nowMs - start;
     }
   }
-  if (driver.availability_status !== "ON_LUNCH") return "--";
-  const updated = new Date(driver.availability_updated_at);
-  if (Number.isNaN(updated.getTime())) return "--";
-  const start = lunchStart ? new Date(lunchStart) : updated;
-  if (Number.isNaN(start.getTime())) return "--";
-  const fallbackEnd = new Date(start.getTime() + 60 * 60 * 1000).toISOString();
-  return formatRemainingTime(fallbackEnd, nowMs);
+  return Math.max(0, LUNCH_DURATION_MS - total);
+};
+
+const formatLunchRemaining = (remainingMs: number): string => {
+  if (remainingMs <= 0) return "0 min";
+  const minutes = Math.ceil(remainingMs / 60000);
+  const hours = Math.floor(minutes / 60);
+  const remainingMins = minutes % 60;
+  if (hours > 0) return `${hours}h ${remainingMins}m`;
+  return `${minutes}m`;
+};
+
+const TRUCK_TYPE_BY_NUMBER: Record<string, string> = {
+  "1": "Flatbed",
+  "2": "Flatbed",
+  "3": "Rollback",
+  "4": "Rollback",
+  "5": "Wheel Lift",
+  "6": "Wheel Lift",
+  "7": "Heavy Duty",
+  "8": "Heavy Duty",
+  "9": "Medium Duty",
+  "10": "Medium Duty",
+};
+
+const getTruckType = (truckNumber: string | undefined | null): string | null => {
+  if (!truckNumber) return null;
+  return TRUCK_TYPE_BY_NUMBER[truckNumber.trim()] ?? null;
+};
+
+const formatTruckDisplay = (truckNumber: string | undefined | null): string => {
+  if (!truckNumber) return "--";
+  const type = getTruckType(truckNumber);
+  if (type) return `Truck ${truckNumber} (${type})`;
+  return `Truck ${truckNumber}`;
 };
 
 const formatEventDetails = (eventType: string, metadata?: string | null) => {
@@ -783,6 +808,7 @@ export default function App() {
   const [dailyReportNotes, setDailyReportNotes] = useState("");
   const [pauseLunchAt, setPauseLunchAt] = useState<Record<string, string>>({});
   const [lunchStartAt, setLunchStartAt] = useState<Record<string, string>>({});
+  const [lunchElapsedMs, setLunchElapsedMs] = useState<Record<string, number>>({});
   const [eventLogItems, setEventLogItems] = useState<EventLogItem[]>([]);
   const [eventLogLoading, setEventLogLoading] = useState(false);
   const [eventLogError, setEventLogError] = useState<string | null>(null);
@@ -869,6 +895,7 @@ export default function App() {
   const canceledOcrCaptureRequestsRef = useRef<Set<number>>(new Set());
   const pickupInputRef = useRef<HTMLInputElement | null>(null);
   const dropoffInputRef = useRef<HTMLInputElement | null>(null);
+  const lunchAutoFinishedRef = useRef<Set<string>>(new Set());
   const [completeLoading, setCompleteLoading] = useState<Record<string, boolean>>({});
   const [callsSectionsOpen, setCallsSectionsOpen] = useState({
     active: true,
@@ -2961,6 +2988,27 @@ export default function App() {
   }, [dashboardDrivers.length, isTauri]);
 
   useEffect(() => {
+    if (!isTauri) return;
+    if (dashboardDrivers.length === 0) return;
+    let active = true;
+    void invoke("driver_lunch_total_elapsed_ms_map")
+      .then((rows) => {
+        if (!active) return;
+        const map: Record<string, number> = {};
+        (rows as Array<[string, number]>).forEach(([driverId, ms]) => {
+          map[driverId] = ms;
+        });
+        setLunchElapsedMs(map);
+      })
+      .catch(() => {
+        // ignore
+      });
+    return () => {
+      active = false;
+    };
+  }, [dashboardDrivers.length, isTauri]);
+
+  useEffect(() => {
     if (!floatingDetail) return;
     const handleKey = (event: KeyboardEvent) => {
       if (isEscapeKey(event)) {
@@ -3001,6 +3049,25 @@ export default function App() {
     }, 60000);
     return () => window.clearInterval(timer);
   }, []);
+
+  // Auto-finish lunch when remaining reaches 0
+  useEffect(() => {
+    dashboardDrivers.forEach((driver) => {
+      if (driver.availability_status !== "ON_LUNCH") {
+        lunchAutoFinishedRef.current.delete(driver.driver_id);
+        return;
+      }
+      if (lunchAutoFinishedRef.current.has(driver.driver_id)) return;
+      const startTs = lunchStartAt[driver.driver_id];
+      const elapsed = lunchElapsedMs[driver.driver_id] ?? 0;
+      const remaining = computeLunchRemainingMs(true, elapsed, startTs, nowMs);
+      if (remaining <= 0) {
+        lunchAutoFinishedRef.current.add(driver.driver_id);
+        void handleAvailabilityChange(driver.driver_id, "AVAILABLE");
+      }
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nowMs]);
 
   useEffect(() => {
     if (!isTauri) return;
@@ -3998,14 +4065,28 @@ export default function App() {
       const current = dashboardDrivers.find((item) => item.driver_id === driverId);
       const wasOnLunch = current?.availability_status === "ON_LUNCH";
       if (wasOnLunch && status === "AVAILABLE") {
-        setPauseLunchAt((prev) => ({ ...prev, [driverId]: new Date().toISOString() }));
+        // Pausing lunch: accumulate elapsed time for the current running segment
+        const nowTs = new Date().toISOString();
+        const startTs = lunchStartAt[driverId];
+        if (startTs) {
+          const segmentMs = Date.now() - new Date(startTs).getTime();
+          if (segmentMs > 0) {
+            setLunchElapsedMs((prev) => ({
+              ...prev,
+              [driverId]: (prev[driverId] ?? 0) + segmentMs,
+            }));
+          }
+        }
+        setPauseLunchAt((prev) => ({ ...prev, [driverId]: nowTs }));
       }
       if (status === "ON_LUNCH") {
+        // Starting or resuming lunch: clear the pause marker, record new start
         setPauseLunchAt((prev) => {
           const next = { ...prev };
           delete next[driverId];
           return next;
         });
+        lunchAutoFinishedRef.current.delete(driverId);
         setLunchStartAt((prev) => ({ ...prev, [driverId]: new Date().toISOString() }));
       }
       await invoke("driver_update", {
@@ -4618,8 +4699,8 @@ export default function App() {
                   <span>{driver?.display_name ?? "Unassigned"}</span>
                 </div>
                 <div className="detail-row detail-row-right">
-                  <span>Truck #</span>
-                  <span>{driver?.current_truck?.truck_number ?? "--"}</span>
+                  <span>Truck</span>
+                  <span>{formatTruckDisplay(driver?.current_truck?.truck_number)}</span>
                 </div>
                 <div className="detail-row">
                   <span>Shift</span>
@@ -5971,9 +6052,9 @@ export default function App() {
                     <span>{drawerDriver?.display_name ?? "Unassigned"}</span>
                   </div>
                   <div className="detail-row detail-row-right">
-                    <span>Truck #</span>
+                    <span>Truck</span>
                     <span>
-                      {drawerDriver?.current_truck?.truck_number ?? "--"}
+                      {formatTruckDisplay(drawerDriver?.current_truck?.truck_number)}
                     </span>
                   </div>
                   <div className="detail-row">
@@ -6926,7 +7007,7 @@ export default function App() {
                               <div className="driver-meta-row">
                                 <span>Truck</span>
                                 <span className="driver-meta-value">
-                                  {driver.current_truck?.truck_number ?? "--"}
+                                  {formatTruckDisplay(driver.current_truck?.truck_number)}
                                 </span>
                               </div>
                               <div className="driver-meta-row">
@@ -8596,9 +8677,9 @@ export default function App() {
                       </div>
                     </div>
                     <div className="driver-meta-row">
-                      <span>Truck #</span>
+                      <span>Truck</span>
                       <span className="driver-meta-value">
-                        {dashboardDriver?.current_truck?.truck_number ?? "--"}
+                        {formatTruckDisplay(dashboardDriver?.current_truck?.truck_number)}
                       </span>
                     </div>
                     <div className="driver-meta-row">
@@ -9261,7 +9342,7 @@ export default function App() {
                         </span>
                       </div>
                       <div className="driver-header-assigned">
-                        <span className="driver-header-assigned-label">Truck #</span>
+                        <span className="driver-header-assigned-label">Truck</span>
                         <span className="driver-header-assigned-value">
                           {isEditing ? (
                             <input
@@ -9278,7 +9359,7 @@ export default function App() {
                               placeholder="--"
                             />
                           ) : (
-                            driver.current_truck?.truck_number ?? "--"
+                            formatTruckDisplay(driver.current_truck?.truck_number)
                           )}
                         </span>
                       </div>
@@ -9328,13 +9409,28 @@ export default function App() {
                           </span>
                         </div>
                         <div className="driver-meta-row">
-                          <span>Lunch started</span>
+                          <span>Lunch</span>
                           <span className="driver-meta-value">
-                            {lunchStartAt[driver.driver_id]
-                              ? formatIsoTime(lunchStartAt[driver.driver_id])
-                              : driver.availability_status === "ON_LUNCH"
-                                ? formatIsoTime(driver.availability_updated_at)
-                                : "--"}
+                            {(() => {
+                              const phase = getLunchPhase(
+                                driver.availability_status,
+                                lunchElapsedMs[driver.driver_id] ?? 0,
+                                pauseLunchAt[driver.driver_id],
+                                lunchStartAt[driver.driver_id]
+                              );
+                              if (phase === "paused") {
+                                const remaining = computeLunchRemainingMs(
+                                  false,
+                                  lunchElapsedMs[driver.driver_id] ?? 0,
+                                  lunchStartAt[driver.driver_id],
+                                  nowMs
+                                );
+                                return `Paused (${formatLunchRemaining(remaining)} left)`;
+                              }
+                              if (phase === "finished") return "Done";
+                              if (phase === "not_started") return "--";
+                              return "--";
+                            })()}
                           </span>
                         </div>
                         <div className="driver-meta-row">
@@ -9450,6 +9546,43 @@ export default function App() {
                     </div>
                     {!isEditing ? (
                       <div className="driver-card-actions-row">
+                        {(() => {
+                          const phase = getLunchPhase(
+                            driver.availability_status,
+                            lunchElapsedMs[driver.driver_id] ?? 0,
+                            pauseLunchAt[driver.driver_id],
+                            lunchStartAt[driver.driver_id]
+                          );
+                          if (phase === "not_started") {
+                            return (
+                              <button
+                                className="driver-action-button driver-card-action-btn"
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void handleAvailabilityChange(driver.driver_id, "ON_LUNCH");
+                                }}
+                              >
+                                Start lunch
+                              </button>
+                            );
+                          }
+                          if (phase === "paused") {
+                            return (
+                              <button
+                                className="driver-action-button driver-card-action-btn"
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  void handleAvailabilityChange(driver.driver_id, "ON_LUNCH");
+                                }}
+                              >
+                                Resume lunch
+                              </button>
+                            );
+                          }
+                          return null;
+                        })()}
                         <button
                           className="driver-action-button driver-card-action-btn"
                           type="button"
@@ -9509,9 +9642,9 @@ export default function App() {
                         </span>
                       </div>
                       <div className="driver-header-assigned">
-                        <span className="driver-header-assigned-label">Truck #</span>
+                        <span className="driver-header-assigned-label">Truck</span>
                         <span className="driver-header-assigned-value">
-                          {driver.current_truck?.truck_number ?? "--"}
+                          {formatTruckDisplay(driver.current_truck?.truck_number)}
                         </span>
                       </div>
                     </div>
@@ -9524,31 +9657,24 @@ export default function App() {
                               ? formatIsoTime(lunchStartAt[driver.driver_id])
                               : formatIsoTime(driver.availability_updated_at)}
                           </span>
-                        </div>
+                         </div>
                         <div className="driver-meta-row">
                           <span>Lunch remaining</span>
                           <span className="driver-meta-value">
-                            {getLunchRemaining(
-                              driver,
-                              todayShift,
-                              nowMs,
-                              pauseLunchAt[driver.driver_id],
-                              lunchStartAt[driver.driver_id]
+                            {formatLunchRemaining(
+                              computeLunchRemainingMs(
+                                true,
+                                lunchElapsedMs[driver.driver_id] ?? 0,
+                                lunchStartAt[driver.driver_id],
+                                nowMs
+                              )
                             )}
                           </span>
                         </div>
-                        {pauseLunchAt[driver.driver_id] ? (
-                          <div className="driver-meta-row">
-                            <span>Paused at timestamp</span>
-                            <span className="driver-meta-value">
-                              {formatIsoTime(pauseLunchAt[driver.driver_id])}
-                            </span>
-                          </div>
-                        ) : null}
                       </div>
                       <div className="driver-column">
                         <div className="driver-meta-row">
-                          <span>Lunch ended</span>
+                          <span>Suggested end</span>
                           <span className="driver-meta-value">
                             {todayShift?.lunch_end ? formatIsoTime(todayShift.lunch_end) : "--"}
                           </span>
