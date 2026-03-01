@@ -174,6 +174,7 @@ pub fn run() {
             commands::events::event_log_clear,
             commands::events::driver_pause_lunch_map,
             commands::events::driver_lunch_start_map,
+            commands::events::driver_lunch_total_elapsed_ms_map,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
