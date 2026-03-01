@@ -89,8 +89,29 @@ type CallDetail = {
   }[];
 };
 
+type CallHistoryItem = {
+  call_id: string;
+  external_call_number?: string | null;
+  source_type: string;
+  law_agency?: string | null;
+  pickup_address: string;
+  dropoff_address?: string | null;
+  status: string;
+  status_updated_at: string;
+  created_at: string;
+  closed_at?: string | null;
+  outcome?: string | null;
+  contact_name?: string | null;
+  callback_phone?: string | null;
+  membership_level?: string | null;
+  pricing_total?: number | null;
+  notes?: string | null;
+  driver_name?: string | null;
+};
+
 type CurrentTruck = {
   truck_number: string;
+  truck_type?: string | null;
   assigned_at: string;
 };
 
@@ -328,6 +349,19 @@ const tabs: Tab[] = [
     ),
   },
   {
+    id: "history",
+    label: "History",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" strokeWidth="2" />
+        <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none" />
+        <path d="M4.5 5.5L2 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M2 6.5H5.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M5 3V6.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
     id: "settings",
     label: "Settings",
     icon: (
@@ -400,11 +434,23 @@ const getLunchRemaining = (
   todayShift: DriverShiftRecord | undefined,
   nowMs: number,
   pausedAt?: string | null,
-  lunchStart?: string | null
+  lunchStart?: string | null,
+  accumPausedMs?: number,
+  pausedSince?: string | null
 ) => {
+  // Calculate total paused milliseconds (accumulated + ongoing if currently paused)
+  let totalPausedMs = accumPausedMs ?? 0;
+  if (pausedSince) {
+    const ps = new Date(pausedSince);
+    if (!Number.isNaN(ps.getTime())) {
+      totalPausedMs += nowMs - ps.getTime();
+    }
+  }
   if (todayShift?.lunch_end) {
     if (driver.availability_status === "ON_LUNCH") {
-      return formatRemainingTime(todayShift.lunch_end, nowMs);
+      // Effective "now" adjusted for pause time
+      const effectiveNow = nowMs - totalPausedMs;
+      return formatRemainingTime(todayShift.lunch_end, effectiveNow);
     }
     if (pausedAt) {
       const paused = new Date(pausedAt);
@@ -419,7 +465,8 @@ const getLunchRemaining = (
   const start = lunchStart ? new Date(lunchStart) : updated;
   if (Number.isNaN(start.getTime())) return "--";
   const fallbackEnd = new Date(start.getTime() + 60 * 60 * 1000).toISOString();
-  return formatRemainingTime(fallbackEnd, nowMs);
+  const effectiveNow = nowMs - totalPausedMs;
+  return formatRemainingTime(fallbackEnd, effectiveNow);
 };
 
 const formatEventDetails = (eventType: string, metadata?: string | null) => {
@@ -783,6 +830,18 @@ export default function App() {
   const [dailyReportNotes, setDailyReportNotes] = useState("");
   const [pauseLunchAt, setPauseLunchAt] = useState<Record<string, string>>({});
   const [lunchStartAt, setLunchStartAt] = useState<Record<string, string>>({});
+  // Lunch pause tracking: driverId -> ISO timestamp when current pause started (paused = status still ON_LUNCH but timer frozen)
+  const [lunchPausedSince, setLunchPausedSince] = useState<Record<string, string>>({});
+  // Accumulated paused milliseconds per driver (persisted in localStorage)
+  const [lunchAccumPausedMs, setLunchAccumPausedMs] = useState<Record<string, number>>(() => {
+    try {
+      const stored = localStorage.getItem("lunchAccumPausedMs");
+      return stored ? (JSON.parse(stored) as Record<string, number>) : {};
+    } catch {
+      return {};
+    }
+  });
+  const lunchAutoEndingRef = useRef<Set<string>>(new Set());
   const [eventLogItems, setEventLogItems] = useState<EventLogItem[]>([]);
   const [eventLogLoading, setEventLogLoading] = useState(false);
   const [eventLogError, setEventLogError] = useState<string | null>(null);
@@ -797,6 +856,15 @@ export default function App() {
   const [reportStatusFilter, setReportStatusFilter] = useState<"ALL" | "COMPLETED" | "CANCELLED">("ALL");
   const [reportStartDate, setReportStartDate] = useState(() => dateKey(new Date()));
   const [reportEndDate, setReportEndDate] = useState(() => dateKey(new Date()));
+  // Call history tab state
+  const [historyItems, setHistoryItems] = useState<CallHistoryItem[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [historySearch, setHistorySearch] = useState("");
+  const [historySourceFilter, setHistorySourceFilter] = useState("");
+  const [historyStatusFilter, setHistoryStatusFilter] = useState("");
+  const [historyDateFrom, setHistoryDateFrom] = useState("");
+  const [historyDateTo, setHistoryDateTo] = useState("");
   const [selectedDriverId, setSelectedDriverId] = useState<string | null>(null);
   const [driverEditMode, setDriverEditMode] = useState<Record<string, boolean>>({});
   const [driverEditDrafts, setDriverEditDrafts] = useState<Record<string, DriverCardDraft>>({});
@@ -2190,6 +2258,29 @@ export default function App() {
     }
   }, [isTauri]);
 
+  const loadCallHistory = useCallback(async () => {
+    if (!isTauri) return;
+    setHistoryLoading(true);
+    try {
+      const data = (await invoke("calls_history", {
+        filters: {
+          search: historySearch || null,
+          source_type: historySourceFilter || null,
+          status: historyStatusFilter || null,
+          date_from: historyDateFrom || null,
+          date_to: historyDateTo || null,
+          limit: 300,
+        },
+      })) as CallHistoryItem[];
+      setHistoryItems(data);
+      setHistoryError(null);
+    } catch (error) {
+      setHistoryError(error instanceof Error ? error.message : "Failed to load call history");
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [isTauri, historySearch, historySourceFilter, historyStatusFilter, historyDateFrom, historyDateTo]);
+
   useEffect(() => {
     void refreshDashboard();
   }, [refreshDashboard]);
@@ -2198,6 +2289,11 @@ export default function App() {
     if (activeTabId !== "daily-report") return;
     void refreshAaaCalls();
   }, [activeTabId, refreshAaaCalls]);
+
+  useEffect(() => {
+    if (activeTabId !== "history") return;
+    void loadCallHistory();
+  }, [activeTabId, loadCallHistory]);
 
   useEffect(() => {
     if (!isDrawerWindow || drawerMode !== "call-detail" || !drawerCallId) return;
@@ -2959,6 +3055,41 @@ export default function App() {
       active = false;
     };
   }, [dashboardDrivers.length, isTauri]);
+
+  // Auto-finish lunch when timer reaches 0
+  useEffect(() => {
+    if (!isTauri) return;
+    dashboardDrivers.forEach((driver) => {
+      if (driver.availability_status !== "ON_LUNCH") return;
+      // Don't auto-finish if currently paused
+      if (lunchPausedSince[driver.driver_id]) return;
+      // Guard against repeated calls while waiting for dashboard refresh
+      if (lunchAutoEndingRef.current.has(driver.driver_id)) return;
+      const todayShift = scheduleShiftLookup.get(
+        `${driver.driver_id}-${dateKey(new Date(nowMs))}`
+      );
+      const remaining = getLunchRemaining(
+        driver,
+        todayShift,
+        nowMs,
+        pauseLunchAt[driver.driver_id],
+        lunchStartAt[driver.driver_id],
+        lunchAccumPausedMs[driver.driver_id],
+        null
+      );
+      if (remaining === "0 min") {
+        lunchAutoEndingRef.current.add(driver.driver_id);
+        void handleAvailabilityChange(driver.driver_id, "AVAILABLE").then(() => {
+          lunchAutoEndingRef.current.delete(driver.driver_id);
+        });
+      }
+    });
+  // Intentionally omitting handleAvailabilityChange and other dashboard state from deps –
+  // this effect runs every second (nowMs) and reads latest values via the stale closure,
+  // which is acceptable since handleAvailabilityChange calls invoke() and refreshDashboard().
+  // Including it would cause infinite re-renders because it is not memoized.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nowMs, isTauri]);
 
   useEffect(() => {
     if (!floatingDetail) return;
@@ -4765,7 +4896,7 @@ export default function App() {
               setCallDraft((prev) => ({
                 ...prev,
                 callType: next,
-                lawAgency: next === "LAW_ENFORCEMENT" ? prev.lawAgency || "CHP" : "",
+                lawAgency: next === "LAW_ENFORCEMENT" ? prev.lawAgency || "SDPD" : "",
               }));
             }}
           >
@@ -4787,10 +4918,11 @@ export default function App() {
                 setCallDraft((prev) => ({ ...prev, lawAgency: event.target.value }))
               }
             >
+              <option value="SDPD">SDPD</option>
               <option value="CHP">CHP</option>
               <option value="CVPD">CVPD</option>
-              <option value="SHERIFFS">SHERIFFS</option>
-              <option value="SAN DIEGO">SAN DIEGO</option>
+              <option value="SHERIFFS">Sheriffs</option>
+              <option value="COD">COD</option>
             </select>
           </label>
         </div>
@@ -5802,8 +5934,7 @@ export default function App() {
                     {drawerEditDraft.source_type === "LAW_ENFORCEMENT" ? (
                       <label className="form-field">
                         Agency
-                        <input
-                          type="text"
+                        <select
                           value={drawerEditDraft.law_agency}
                           onChange={(event) =>
                             setDrawerEditDraft((prev) => ({
@@ -5811,7 +5942,14 @@ export default function App() {
                               law_agency: event.target.value,
                             }))
                           }
-                        />
+                        >
+                          <option value="">Select agency</option>
+                          <option value="SDPD">SDPD</option>
+                          <option value="CHP">CHP</option>
+                          <option value="CVPD">CVPD</option>
+                          <option value="SHERIFFS">Sheriffs</option>
+                          <option value="COD">COD</option>
+                        </select>
                       </label>
                     ) : null}
                     <label className="form-field detail-row-wide">
@@ -6307,7 +6445,14 @@ export default function App() {
                             {driver.today_shift_start ? formatIsoTime(driver.today_shift_start) : "--"}
                           </span>
                         </div>
-                        <div className="call-header-center" />
+                        <div className="call-header-center">
+                          {driver.current_truck ? (
+                            <span className="call-subtext">
+                              Truck: {driver.current_truck.truck_number}
+                              {driver.current_truck.truck_type ? ` (${driver.current_truck.truck_type})` : ""}
+                            </span>
+                          ) : null}
+                        </div>
                         <div className="call-header-right">
                           <span className="call-status-code">{call.status}</span>
                           <span className="call-status-line">{statusTime}</span>
@@ -6420,7 +6565,7 @@ export default function App() {
                           </button>
                         ))}
                       </div>
-                      {call.status === "98" ? (
+                      {call.status === "98" && call.source_type === "AAA" ? (
                         <div className="call-checklist">
                           <label className="checklist-item">
                             <input
@@ -6457,7 +6602,7 @@ export default function App() {
                           ) : null}
                         </div>
                       ) : null}
-                      {call.status === "95" ? (
+                      {call.status === "95" && call.source_type === "AAA" ? (
                         <div className="call-checklist">
                           <div className="call-checklist-title">Status 95 Checklist (NSR)</div>
                           <label className="checklist-item">
@@ -6926,7 +7071,9 @@ export default function App() {
                               <div className="driver-meta-row">
                                 <span>Truck</span>
                                 <span className="driver-meta-value">
-                                  {driver.current_truck?.truck_number ?? "--"}
+                                  {driver.current_truck
+                                    ? `${driver.current_truck.truck_number}${driver.current_truck.truck_type ? ` (${driver.current_truck.truck_type})` : ""}`
+                                    : "--"}
                                 </span>
                               </div>
                               <div className="driver-meta-row">
@@ -8847,6 +8994,124 @@ export default function App() {
         </section>
       </>
     );
+  } else if (activeTabId === "history") {
+    contentBody = (
+      <>
+        <div className="hero-card">
+          <p className="hero-label">Call History</p>
+          <p className="hero-sub">Search completed and cancelled calls</p>
+        </div>
+
+        <section className="driver-section">
+          <div className="history-filters">
+            <input
+              className="history-search-input"
+              type="text"
+              placeholder="Search by address, contact, notes…"
+              value={historySearch}
+              onChange={(event) => setHistorySearch(event.target.value)}
+            />
+            <select
+              className="history-filter-select"
+              value={historySourceFilter}
+              onChange={(event) => setHistorySourceFilter(event.target.value)}
+            >
+              <option value="">All sources</option>
+              <option value="AAA">AAA</option>
+              <option value="LAW_ENFORCEMENT">Law Enforcement</option>
+              <option value="COD">COD</option>
+              <option value="PPI">PPI</option>
+            </select>
+            <select
+              className="history-filter-select"
+              value={historyStatusFilter}
+              onChange={(event) => setHistoryStatusFilter(event.target.value)}
+            >
+              <option value="">All statuses</option>
+              <option value="98">98 (Completed)</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
+            <input
+              className="history-filter-date"
+              type="date"
+              value={historyDateFrom}
+              onChange={(event) => setHistoryDateFrom(event.target.value)}
+              title="From date"
+            />
+            <input
+              className="history-filter-date"
+              type="date"
+              value={historyDateTo}
+              onChange={(event) => setHistoryDateTo(event.target.value)}
+              title="To date"
+            />
+            <button
+              className="ghost-button"
+              type="button"
+              onClick={() => void loadCallHistory()}
+            >
+              Search
+            </button>
+            <button
+              className="ghost-button"
+              type="button"
+              onClick={() => {
+                setHistorySearch("");
+                setHistorySourceFilter("");
+                setHistoryStatusFilter("");
+                setHistoryDateFrom("");
+                setHistoryDateTo("");
+              }}
+            >
+              Reset
+            </button>
+          </div>
+
+          {historyLoading ? (
+            <div className="driver-empty">Loading…</div>
+          ) : historyError ? (
+            <div className="driver-empty">{historyError}</div>
+          ) : historyItems.length === 0 ? (
+            <div className="driver-empty">No completed calls found. Try adjusting filters and searching.</div>
+          ) : (
+            <div className="history-table-wrap">
+              <table className="history-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Call #</th>
+                    <th>Source</th>
+                    <th>Agency</th>
+                    <th>Pickup</th>
+                    <th>Drop-off</th>
+                    <th>Contact</th>
+                    <th>Driver</th>
+                    <th>Status</th>
+                    <th>Outcome</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historyItems.map((item) => (
+                    <tr key={item.call_id}>
+                      <td>{formatIsoTime(item.created_at)}</td>
+                      <td>{item.external_call_number ?? "--"}</td>
+                      <td>{item.source_type}</td>
+                      <td>{item.law_agency ?? "--"}</td>
+                      <td className="history-address">{item.pickup_address}</td>
+                      <td className="history-address">{item.dropoff_address ?? "--"}</td>
+                      <td>{item.contact_name ?? "--"}</td>
+                      <td>{item.driver_name ?? "--"}</td>
+                      <td>{item.status}</td>
+                      <td>{item.outcome ?? "--"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
+      </>
+    );
   } else if (activeTabId === "settings") {
     const eventTypes = [
       "CALL_CREATED",
@@ -9278,7 +9543,9 @@ export default function App() {
                               placeholder="--"
                             />
                           ) : (
-                            driver.current_truck?.truck_number ?? "--"
+                            driver.current_truck
+                              ? `${driver.current_truck.truck_number}${driver.current_truck.truck_type ? ` (${driver.current_truck.truck_type})` : ""}`
+                              : "--"
                           )}
                         </span>
                       </div>
@@ -9512,6 +9779,7 @@ export default function App() {
                         <span className="driver-header-assigned-label">Truck #</span>
                         <span className="driver-header-assigned-value">
                           {driver.current_truck?.truck_number ?? "--"}
+                          {driver.current_truck?.truck_type ? ` (${driver.current_truck.truck_type})` : ""}
                         </span>
                       </div>
                     </div>
@@ -9528,23 +9796,32 @@ export default function App() {
                         <div className="driver-meta-row">
                           <span>Lunch remaining</span>
                           <span className="driver-meta-value">
-                            {getLunchRemaining(
-                              driver,
-                              todayShift,
-                              nowMs,
-                              pauseLunchAt[driver.driver_id],
-                              lunchStartAt[driver.driver_id]
+                            {lunchPausedSince[driver.driver_id] ? (
+                              <span className="lunch-paused-remaining">
+                                {getLunchRemaining(
+                                  driver,
+                                  todayShift,
+                                  nowMs,
+                                  pauseLunchAt[driver.driver_id],
+                                  lunchStartAt[driver.driver_id],
+                                  lunchAccumPausedMs[driver.driver_id],
+                                  lunchPausedSince[driver.driver_id]
+                                )}{" "}
+                                ⏸ Paused
+                              </span>
+                            ) : (
+                              getLunchRemaining(
+                                driver,
+                                todayShift,
+                                nowMs,
+                                pauseLunchAt[driver.driver_id],
+                                lunchStartAt[driver.driver_id],
+                                lunchAccumPausedMs[driver.driver_id],
+                                null
+                              )
                             )}
                           </span>
                         </div>
-                        {pauseLunchAt[driver.driver_id] ? (
-                          <div className="driver-meta-row">
-                            <span>Paused at timestamp</span>
-                            <span className="driver-meta-value">
-                              {formatIsoTime(pauseLunchAt[driver.driver_id])}
-                            </span>
-                          </div>
-                        ) : null}
                       </div>
                       <div className="driver-column">
                         <div className="driver-meta-row">
@@ -9555,16 +9832,52 @@ export default function App() {
                         </div>
                       </div>
                     </div>
-                    <div className="driver-card-actions-row driver-card-actions-row--single">
+                    <div className="driver-card-actions-row">
+                      {lunchPausedSince[driver.driver_id] ? (
+                        <button
+                          className="driver-action-button driver-card-action-btn"
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            const pausedSince = lunchPausedSince[driver.driver_id];
+                            if (pausedSince) {
+                              const addedMs = Date.now() - new Date(pausedSince).getTime();
+                              const next = { ...lunchAccumPausedMs, [driver.driver_id]: (lunchAccumPausedMs[driver.driver_id] ?? 0) + addedMs };
+                              setLunchAccumPausedMs(next);
+                              try { localStorage.setItem("lunchAccumPausedMs", JSON.stringify(next)); } catch (err) { console.warn("localStorage write failed:", err); }
+                            }
+                            setLunchPausedSince((prev) => { const n = { ...prev }; delete n[driver.driver_id]; return n; });
+                          }}
+                        >
+                          Resume lunch
+                        </button>
+                      ) : (
+                        <button
+                          className="driver-action-button driver-card-action-btn"
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setLunchPausedSince((prev) => ({ ...prev, [driver.driver_id]: new Date().toISOString() }));
+                          }}
+                        >
+                          Pause lunch
+                        </button>
+                      )}
                       <button
                         className="driver-action-button driver-card-action-btn"
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
-                          handleAvailabilityChange(driver.driver_id, "AVAILABLE");
+                          // Clear accumulated pause data for this driver
+                          const next = { ...lunchAccumPausedMs };
+                          delete next[driver.driver_id];
+                          setLunchAccumPausedMs(next);
+                          try { localStorage.setItem("lunchAccumPausedMs", JSON.stringify(next)); } catch (err) { console.warn("localStorage write failed:", err); }
+                          setLunchPausedSince((prev) => { const n = { ...prev }; delete n[driver.driver_id]; return n; });
+                          void handleAvailabilityChange(driver.driver_id, "AVAILABLE");
                         }}
                       >
-                        Pause lunch
+                        End lunch
                       </button>
                     </div>
                   </article>

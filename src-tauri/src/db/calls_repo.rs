@@ -632,3 +632,122 @@ pub fn call_update(conn: &mut Connection, call_id: &str, payload: CallUpdatePayl
     tx.commit().context("commit failed")?;
     Ok(())
 }
+
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct CallHistoryFilters {
+    pub search: Option<String>,
+    pub source_type: Option<String>,
+    pub status: Option<String>,
+    pub date_from: Option<String>,
+    pub date_to: Option<String>,
+    pub limit: Option<i64>,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+pub struct CallHistoryItem {
+    pub call_id: String,
+    pub external_call_number: Option<String>,
+    pub source_type: String,
+    pub law_agency: Option<String>,
+    pub pickup_address: String,
+    pub dropoff_address: Option<String>,
+    pub status: String,
+    pub status_updated_at: String,
+    pub created_at: String,
+    pub closed_at: Option<String>,
+    pub outcome: Option<String>,
+    pub contact_name: Option<String>,
+    pub callback_phone: Option<String>,
+    pub membership_level: Option<String>,
+    pub pricing_total: Option<f64>,
+    pub notes: Option<String>,
+    pub driver_name: Option<String>,
+}
+
+pub fn list_calls_history(conn: &Connection, filters: CallHistoryFilters) -> Result<Vec<CallHistoryItem>> {
+    let limit = filters.limit.unwrap_or(200).clamp(1, 1000);
+    let search = filters.search.map(|v| v.trim().to_lowercase()).filter(|v| !v.is_empty());
+    let search_like = search.as_ref().map(|v| format!("%{}%", v));
+    let source_type = filters.source_type.filter(|v| !v.is_empty());
+    let status = filters.status.filter(|v| !v.is_empty());
+
+    let mut stmt = conn.prepare(
+        r#"
+        SELECT
+          c.id,
+          c.external_call_number,
+          c.source_type,
+          c.law_agency,
+          c.pickup_address,
+          c.dropoff_address,
+          c.status,
+          c.status_updated_at,
+          c.created_at,
+          c.closed_at,
+          c.outcome,
+          c.contact_name,
+          c.callback_phone,
+          c.membership_level,
+          c.pricing_total,
+          c.notes,
+          (SELECT d.display_name
+           FROM call_assignments ca
+           JOIN drivers d ON d.id = ca.driver_id
+           WHERE ca.call_id = c.id
+           ORDER BY COALESCE(ca.ended_at, ca.activated_at, ca.assigned_at) DESC
+           LIMIT 1
+          ) AS driver_name
+        FROM calls c
+        WHERE c.status IN ('98', 'CANCELLED')
+          AND (?1 IS NULL OR date(c.created_at) >= date(?1))
+          AND (?2 IS NULL OR date(c.created_at) <= date(?2))
+          AND (?3 IS NULL OR c.source_type = ?3)
+          AND (?4 IS NULL OR c.status = ?4)
+          AND (
+            ?5 IS NULL
+            OR lower(COALESCE(c.external_call_number, '')) LIKE ?5
+            OR lower(c.pickup_address) LIKE ?5
+            OR lower(COALESCE(c.dropoff_address, '')) LIKE ?5
+            OR lower(COALESCE(c.contact_name, '')) LIKE ?5
+            OR lower(COALESCE(c.law_agency, '')) LIKE ?5
+            OR lower(COALESCE(c.notes, '')) LIKE ?5
+          )
+        ORDER BY c.status_updated_at DESC
+        LIMIT ?6
+        "#,
+    )?;
+
+    let rows = stmt.query_map(
+        rusqlite::params![
+            filters.date_from.as_deref(),
+            filters.date_to.as_deref(),
+            source_type.as_deref(),
+            status.as_deref(),
+            search_like.as_deref(),
+            limit
+        ],
+        |row| {
+            Ok(CallHistoryItem {
+                call_id: row.get(0)?,
+                external_call_number: row.get(1)?,
+                source_type: row.get(2)?,
+                law_agency: row.get(3)?,
+                pickup_address: row.get(4)?,
+                dropoff_address: row.get(5)?,
+                status: row.get(6)?,
+                status_updated_at: row.get(7)?,
+                created_at: row.get(8)?,
+                closed_at: row.get(9)?,
+                outcome: row.get(10)?,
+                contact_name: row.get(11)?,
+                callback_phone: row.get(12)?,
+                membership_level: row.get(13)?,
+                pricing_total: row.get(14)?,
+                notes: row.get(15)?,
+                driver_name: row.get(16)?,
+            })
+        },
+    )?;
+
+    Ok(rows.collect::<std::result::Result<Vec<_>, _>>().context("map history failed")?)
+}
