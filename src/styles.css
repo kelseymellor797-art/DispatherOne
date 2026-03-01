@@ -1276,6 +1276,7 @@ body {
 
 .call-grid {
   display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: 16px;
 }
 
@@ -3508,4 +3509,72 @@ body,
 .detail-card.call-detail-card.weekly-schedule-drawer:has(.modal-backdrop) {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+}
+
+/* ── Call History Tab ─────────────────────────────────────────────────────── */
+.history-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.history-search-input {
+  flex: 1 1 220px;
+  min-width: 180px;
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(120, 160, 200, 0.3);
+  background: rgba(8, 12, 18, 0.85);
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.history-filter-select,
+.history-filter-date {
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(120, 160, 200, 0.3);
+  background: rgba(8, 12, 18, 0.85);
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.history-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.history-table {
+  width: 100%;
+  table-layout: auto;
+  border-collapse: collapse;
+  font-size: 0.84rem;
+}
+
+.history-table th,
+.history-table td {
+  border: 1px solid rgba(120, 160, 200, 0.2);
+  padding: 7px 10px;
+  vertical-align: top;
+  text-align: left;
+}
+
+.history-table th {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  color: var(--muted);
+  background: rgba(8, 12, 18, 0.6);
+  white-space: nowrap;
+}
+
+.history-table tbody tr:hover {
+  background: rgba(57, 213, 255, 0.05);
+}
+
+.history-address {
+  max-width: 220px;
+  word-break: break-word;
 }

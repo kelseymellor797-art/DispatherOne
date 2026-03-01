@@ -29,6 +29,7 @@ pub struct DriverDashboardItem {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CurrentTruck {
     pub truck_number: String,
+    pub truck_type: Option<String>,
     pub assigned_at: String,
 }
 
