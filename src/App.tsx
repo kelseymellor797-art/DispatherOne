@@ -380,7 +380,7 @@ const durationMinutesBetween = (startValue?: string | null, endValue?: string | 
   return Math.round(diffMs / 60000);
 };
 
-const LUNCH_DURATION_MS = 60 * 60 * 1000;
+const LUNCH_DURATION_MS = 60 * 60 * 1000; // 1 hour lunch per driver per shift
 
 type LunchPhase = "not_started" | "running" | "paused" | "finished";
 
@@ -3050,8 +3050,10 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, []);
 
-  // Auto-finish lunch when remaining reaches 0
+  // Auto-finish lunch when remaining reaches 0: directly invoke driver_update to avoid
+  // stale closure issues that would arise from including handleAvailabilityChange in deps.
   useEffect(() => {
+    if (!isTauri) return;
     dashboardDrivers.forEach((driver) => {
       if (driver.availability_status !== "ON_LUNCH") {
         lunchAutoFinishedRef.current.delete(driver.driver_id);
@@ -3063,11 +3065,26 @@ export default function App() {
       const remaining = computeLunchRemainingMs(true, elapsed, startTs, nowMs);
       if (remaining <= 0) {
         lunchAutoFinishedRef.current.add(driver.driver_id);
-        void handleAvailabilityChange(driver.driver_id, "AVAILABLE");
+        const driverId = driver.driver_id;
+        const segmentMs = startTs ? nowMs - new Date(startTs).getTime() : 0;
+        if (segmentMs > 0) {
+          setLunchElapsedMs((prev) => ({
+            ...prev,
+            [driverId]: (prev[driverId] ?? 0) + segmentMs,
+          }));
+        }
+        setPauseLunchAt((prev) => ({ ...prev, [driverId]: new Date(nowMs).toISOString() }));
+        void invoke("driver_update", {
+          driverId,
+          payload: { availability_status: "AVAILABLE" },
+        }).then(() => {
+          void invoke("dashboard_get").then((snap) => {
+            setDashboard(snap as DashboardSnapshot);
+          }).catch(() => {});
+        }).catch(() => {});
       }
     });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nowMs]);
+  }, [nowMs, dashboardDrivers, lunchStartAt, lunchElapsedMs, isTauri]);
 
   useEffect(() => {
     if (!isTauri) return;
@@ -9657,7 +9674,7 @@ export default function App() {
                               ? formatIsoTime(lunchStartAt[driver.driver_id])
                               : formatIsoTime(driver.availability_updated_at)}
                           </span>
-                         </div>
+                        </div>
                         <div className="driver-meta-row">
                           <span>Lunch remaining</span>
                           <span className="driver-meta-value">
