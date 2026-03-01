@@ -6143,6 +6143,9 @@ export default function App() {
                             <span className="call-subtext">
                               Shift:{" "}
                               {driver.today_shift_start ? formatIsoTime(driver.today_shift_start) : "--"}
+                              {driver.current_truck?.truck_number
+                                ? ` · Truck #${driver.current_truck.truck_number}`
+                                : ""}
                             </span>
                           </div>
                           <div className="call-header-center">
@@ -6305,7 +6308,13 @@ export default function App() {
                           <span className="call-subtext">
                             Shift:{" "}
                             {driver.today_shift_start ? formatIsoTime(driver.today_shift_start) : "--"}
+                            {driver.current_truck?.truck_number
+                              ? ` · Truck #${driver.current_truck.truck_number}`
+                              : ""}
                           </span>
+                          {call.law_agency ? (
+                            <span className="call-agency-badge">{call.law_agency}</span>
+                          ) : null}
                         </div>
                         <div className="call-header-center" />
                         <div className="call-header-right">
@@ -6325,6 +6334,12 @@ export default function App() {
                         </div>
                       </header>
                       <div className="call-summary">
+                        {call.law_agency ? (
+                          <div className="call-summary-row">
+                            <span className="call-label">Agency</span>
+                            <span className="call-value">{call.law_agency}</span>
+                          </div>
+                        ) : null}
                         <div className="call-summary-row">
                           <span className="call-label">Type</span>
                           <span className="call-value">
@@ -6775,7 +6790,12 @@ export default function App() {
                               </button>
                             </div>
                             <header className="pending-call-header">
-                              <h3>Pending Call</h3>
+                              <div className="pending-call-title">
+                                <h3>Pending Call</h3>
+                                {call.law_agency ? (
+                                  <span className="call-agency-badge">{call.law_agency}</span>
+                                ) : null}
+                              </div>
                               <div className="pending-assign-inline">
                                 <span>Assign Driver</span>
                                 <select
@@ -6836,6 +6856,10 @@ export default function App() {
                                 </div>
                               </div>
                               <div className="pending-column">
+                                <div className="pending-field">
+                                  <span>Agency / Contract</span>
+                                  <span>{call.law_agency ?? "--"}</span>
+                                </div>
                                 <div className="pending-field">
                                   <span>Call Type</span>
                                   <span>{call.source_type}</span>
