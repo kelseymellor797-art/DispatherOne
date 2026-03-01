@@ -156,6 +156,8 @@ pub fn run() {
             commands::drivers::driver_truck_assign,
             commands::drivers::driver_get,
             commands::reports::report_driver_calls,
+            commands::reports::call_history_list,
+            commands::reports::call_history_clear,
             commands::nearby::call_nearby_drivers,
             commands::shifts::shift_list,
             commands::shifts::shift_create,
