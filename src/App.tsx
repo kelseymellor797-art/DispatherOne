@@ -715,6 +715,16 @@ const CVPD_NEGLIGENCE_FEE = 175;
 const CVPD_GATE_FEE = 65;
 const OVER_MILES_RATE = 12;
 
+// Canonical contract/agency values for calls.
+// LE agencies (CHP, SDPD, CVPD, SHERIFF) map to source_type="LAW_ENFORCEMENT" + law_agency in the backend.
+const LE_AGENCIES = ["CHP", "SDPD", "CVPD", "SHERIFF"] as const;
+const isLeCallType = (t: string): boolean => (LE_AGENCIES as readonly string[]).includes(t);
+/** Returns the flat display agency from stored (source_type, law_agency) pair. */
+function displayCallAgency(sourceType: string, lawAgency?: string | null): string {
+  if (sourceType === "LAW_ENFORCEMENT") return lawAgency ?? "Law Enforcement";
+  return sourceType;
+}
+
 export default function App() {
   const searchParams = new URLSearchParams(window.location.search);
   const floatingTabId = searchParams.get("floating");
@@ -2765,7 +2775,7 @@ export default function App() {
 
   useEffect(() => {
     if (!isAddCallOpen) return;
-    if (callDraft.callType !== "LAW_ENFORCEMENT") return;
+    if (!isLeCallType(callDraft.callType)) return;
     if (callDraft.leTimestamp) return;
     setCallDraft((prev) => ({ ...prev, leTimestamp: formatTimestamp(Date.now()) }));
   }, [isAddCallOpen, callDraft.callType, callDraft.leTimestamp]);
@@ -3532,7 +3542,8 @@ export default function App() {
   ) => {
     if (!isTauri) return;
     if (status === "98") {
-      if (!isChecklistComplete(callId)) {
+      const callEntry = findDashboardCall(callId);
+      if (callEntry?.call?.source_type === "AAA" && !isChecklistComplete(callId)) {
         setClearErrors((prev) => ({
           ...prev,
           [callId]: "Checklist incomplete. You can set 98, but cannot complete until finished.",
@@ -3561,7 +3572,9 @@ export default function App() {
     const driver = dashboardDrivers.find((item) => item.driver_id === driverId);
     const activeCallId = driver?.active_call?.call_id;
     if (activeCallId) {
-      if (!isChecklistComplete(activeCallId)) {
+      const activeCall = findDashboardCall(activeCallId);
+      const isAaa = activeCall?.call?.source_type === "AAA";
+      if (isAaa && !isChecklistComplete(activeCallId)) {
         setClearErrors((prev) => ({
           ...prev,
           [activeCallId]: "Complete the checklist before activating another call.",
@@ -3569,7 +3582,7 @@ export default function App() {
         alert("Complete the checklist before activating another call.");
         return;
       }
-      if (!isNsrChecklistComplete(activeCallId)) {
+      if (isAaa && !isNsrChecklistComplete(activeCallId)) {
         setNsrErrors((prev) => ({
           ...prev,
           [activeCallId]: "Complete the NSR checklist before activating another call.",
@@ -3977,12 +3990,13 @@ export default function App() {
     el.select();
   };
 
-  const mapCallType = (callType: string, lawAgency: string) => {
+  const mapCallType = (callType: string) => {
+    if (isLeCallType(callType)) {
+      return { sourceType: "LAW_ENFORCEMENT", pricingCategory: "LAW_ENFORCEMENT", lawAgency: callType };
+    }
     switch (callType) {
       case "AAA":
         return { sourceType: "AAA", pricingCategory: "AAA", lawAgency: null };
-      case "LAW_ENFORCEMENT":
-        return { sourceType: "LAW_ENFORCEMENT", pricingCategory: "LAW_ENFORCEMENT", lawAgency };
       case "PPI":
         return { sourceType: "PPI", pricingCategory: "PPI", lawAgency: null };
       case "COD":
@@ -4086,7 +4100,7 @@ export default function App() {
       const requiresPickup =
         callDraft.callType === "AAA";
       const requiresLocation =
-        callDraft.callType === "LAW_ENFORCEMENT" ||
+        isLeCallType(callDraft.callType) ||
         callDraft.callType === "COD" ||
         callDraft.callType === "PPI";
 
@@ -4103,7 +4117,7 @@ export default function App() {
       return;
     }
 
-      const mapping = mapCallType(callDraft.callType, callDraft.lawAgency);
+      const mapping = mapCallType(callDraft.callType);
       const pickupNotes = [
         callDraft.workType ? `Work Type: ${callDraft.workType}` : null,
         callDraft.contactId ? `Contact ID: ${callDraft.contactId}` : null,
@@ -4127,7 +4141,7 @@ export default function App() {
     if (callDraft.vehicleType.trim()) {
       extraNotes.push(`Car Type: ${callDraft.vehicleType.trim()}`);
     }
-    if (callDraft.callType === "LAW_ENFORCEMENT") {
+    if (isLeCallType(callDraft.callType)) {
       if (callDraft.leTimestamp) {
         extraNotes.push(`LE Timestamp: ${callDraft.leTimestamp}`);
       }
@@ -4274,7 +4288,8 @@ export default function App() {
       return;
     }
     const checklistComplete =
-      status === "95" ? isNsrChecklistComplete(callId) : isChecklistComplete(callId);
+      active?.call?.source_type !== "AAA" ||
+      (status === "95" ? isNsrChecklistComplete(callId) : isChecklistComplete(callId));
     console.log("Is checklist complete?", checklistComplete);
     if (!checklistComplete) {
       if (status === "95") {
@@ -4643,8 +4658,7 @@ export default function App() {
                 <div className="detail-row detail-row-right">
                   <span>Source</span>
                   <span>
-                    {call.source_type}
-                    {call.law_agency ? ` · ${call.law_agency}` : ""}
+                    {displayCallAgency(call.source_type, call.law_agency)}
                   </span>
                 </div>
                 <div className="detail-row">
@@ -4765,36 +4779,21 @@ export default function App() {
               setCallDraft((prev) => ({
                 ...prev,
                 callType: next,
-                lawAgency: next === "LAW_ENFORCEMENT" ? prev.lawAgency || "CHP" : "",
+                lawAgency: "",
               }));
             }}
           >
             <option value="">Select source type</option>
-            <option value="LAW_ENFORCEMENT">Law Enforcement</option>
+            <option value="AAA">AAA</option>
+            <option value="CHP">CHP</option>
+            <option value="SDPD">SDPD</option>
+            <option value="CVPD">CVPD</option>
+            <option value="SHERIFF">Sheriff</option>
             <option value="COD">COD</option>
             <option value="PPI">PPI</option>
-            <option value="AAA">AAA</option>
                       </select>
         </div>
       </div>
-      {callDraft.callType === "LAW_ENFORCEMENT" ? (
-        <div className="form-row">
-          <label className="form-field">
-            Agency
-            <select
-              value={callDraft.lawAgency}
-              onChange={(event) =>
-                setCallDraft((prev) => ({ ...prev, lawAgency: event.target.value }))
-              }
-            >
-              <option value="CHP">CHP</option>
-              <option value="CVPD">CVPD</option>
-              <option value="SHERIFFS">SHERIFFS</option>
-              <option value="SAN DIEGO">SAN DIEGO</option>
-            </select>
-          </label>
-        </div>
-      ) : null}
 
       {callDraft.callType ? (
         <>
@@ -5018,7 +5017,7 @@ export default function App() {
               </div>
             </>
           )}
-          {callDraft.callType === "LAW_ENFORCEMENT" ? (
+          {isLeCallType(callDraft.callType) ? (
             <div className="detail-grid-rows">
               <label className="form-field">
                 Log #
@@ -5784,36 +5783,28 @@ export default function App() {
                     <label className="form-field detail-row-right">
                       Source type
                       <select
-                        value={drawerEditDraft.source_type}
-                        onChange={(event) =>
+                        value={drawerEditDraft.source_type === "LAW_ENFORCEMENT"
+                          ? drawerEditDraft.law_agency || "CHP"
+                          : drawerEditDraft.source_type}
+                        onChange={(event) => {
+                          const next = event.target.value;
                           setDrawerEditDraft((prev) => ({
                             ...prev,
-                            source_type: event.target.value,
-                          }))
-                        }
+                            source_type: isLeCallType(next) ? "LAW_ENFORCEMENT" : next,
+                            law_agency: isLeCallType(next) ? next : "",
+                          }));
+                        }}
                       >
                         <option value="">Select source</option>
                         <option value="AAA">AAA</option>
-                                                <option value="LAW_ENFORCEMENT">Law Enforcement</option>
+                        <option value="CHP">CHP</option>
+                        <option value="SDPD">SDPD</option>
+                        <option value="CVPD">CVPD</option>
+                        <option value="SHERIFF">Sheriff</option>
                         <option value="COD">COD</option>
                         <option value="PPI">PPI</option>
                       </select>
                     </label>
-                    {drawerEditDraft.source_type === "LAW_ENFORCEMENT" ? (
-                      <label className="form-field">
-                        Agency
-                        <input
-                          type="text"
-                          value={drawerEditDraft.law_agency}
-                          onChange={(event) =>
-                            setDrawerEditDraft((prev) => ({
-                              ...prev,
-                              law_agency: event.target.value,
-                            }))
-                          }
-                        />
-                      </label>
-                    ) : null}
                     <label className="form-field detail-row-wide">
                       Pickup
                       <input
@@ -5998,10 +5989,10 @@ export default function App() {
                   <div className="detail-row detail-row-right">
                     <span>Source</span>
                     <span>
-                      {(drawerDetailCall ?? drawerCall)?.source_type}
-                      {(drawerDetailCall ?? drawerCall)?.law_agency
-                        ? ` · ${(drawerDetailCall ?? drawerCall)?.law_agency}`
-                        : ""}
+                      {displayCallAgency(
+                        (drawerDetailCall ?? drawerCall)?.source_type ?? "",
+                        (drawerDetailCall ?? drawerCall)?.law_agency
+                      )}
                     </span>
                   </div>
                   <div className="detail-row">
@@ -6224,7 +6215,7 @@ export default function App() {
                                       : ""
                                   }`}
                                 >
-                                  <span className="call-queue-type">{queued.source_type}</span>
+                                  <span className="call-queue-type">{displayCallAgency(queued.source_type, queued.law_agency)}</span>
                                   <span className="call-queue-address">{queued.pickup_address}</span>
                                   {queued.dropoff_address ? (
                                     <span className="call-queue-tow">
@@ -6328,7 +6319,7 @@ export default function App() {
                         <div className="call-summary-row">
                           <span className="call-label">Type</span>
                           <span className="call-value">
-                            {call.source_type}
+                            {displayCallAgency(call.source_type, call.law_agency)}
                           </span>
                         </div>
                         <div className="call-summary-row">
@@ -6420,7 +6411,7 @@ export default function App() {
                           </button>
                         ))}
                       </div>
-                      {call.status === "98" ? (
+                      {call.source_type === "AAA" && call.status === "98" ? (
                         <div className="call-checklist">
                           <label className="checklist-item">
                             <input
@@ -6457,7 +6448,7 @@ export default function App() {
                           ) : null}
                         </div>
                       ) : null}
-                      {call.status === "95" ? (
+                      {call.source_type === "AAA" && call.status === "95" ? (
                         <div className="call-checklist">
                           <div className="call-checklist-title">Status 95 Checklist (NSR)</div>
                           <label className="checklist-item">
@@ -6592,7 +6583,7 @@ export default function App() {
                                   );
                                 })()}
                               >
-                                <span className="call-queue-type">{queued.source_type}</span>
+                                <span className="call-queue-type">{displayCallAgency(queued.source_type, queued.law_agency)}</span>
                                 <span className="call-queue-address">{queued.pickup_address}</span>
                                 {queued.dropoff_address ? (
                                   <span className="call-queue-tow">
@@ -6838,7 +6829,7 @@ export default function App() {
                               <div className="pending-column">
                                 <div className="pending-field">
                                   <span>Call Type</span>
-                                  <span>{call.source_type}</span>
+                                  <span>{displayCallAgency(call.source_type, call.law_agency)}</span>
                                 </div>
                                 <div className="pending-field">
                                   <span>Membership</span>
