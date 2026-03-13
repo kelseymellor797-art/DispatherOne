@@ -9836,7 +9836,7 @@ export default function App() {
         </nav>
 
         <div className="panel-footer">
-          <div className="shortcut-hint">Ctrl/⌘ + 1-6</div>
+          <div className="shortcut-hint">Ctrl/⌘ + 1-{tabs.length}</div>
         </div>
       </aside>
       )}
@@ -10450,4 +10450,3 @@ export default function App() {
     </div>
   );
 }
-

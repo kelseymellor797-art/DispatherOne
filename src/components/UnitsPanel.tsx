@@ -14,6 +14,22 @@ type UnitPosition = {
   updated_at: string;
 };
 
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const isValidCoord = (lat: number, lng: number): boolean =>
+  Number.isFinite(lat) &&
+  Number.isFinite(lng) &&
+  lat >= -90 &&
+  lat <= 90 &&
+  lng >= -180 &&
+  lng <= 180;
+
 export function UnitsPanel() {
   const [units, setUnits] = useState<UnitPosition[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,7 +117,7 @@ export function UnitsPanel() {
     const bounds: L.LatLngTuple[] = [];
 
     for (const unit of units) {
-      if (unit.lat === 0 && unit.lng === 0) continue;
+      if ((unit.lat === 0 && unit.lng === 0) || !isValidCoord(unit.lat, unit.lng)) continue;
 
       currentIds.add(unit.unit_id);
       const pos: L.LatLngTuple = [unit.lat, unit.lng];
@@ -134,7 +150,7 @@ export function UnitsPanel() {
   }, [units]);
 
   const markerPopup = (unit: UnitPosition): string => {
-    return `<b>Truck ${unit.truck_number}</b><br/>
+    return `<b>Truck ${escapeHtml(unit.truck_number)}</b><br/>
 Lat: ${unit.lat.toFixed(6)}<br/>
 Lng: ${unit.lng.toFixed(6)}<br/>
 Speed: ${unit.speed.toFixed(1)} mph<br/>
@@ -147,14 +163,32 @@ Updated: ${unit.updated_at ? new Date(unit.updated_at).toLocaleString() : "N/A"}
     if (!selectedUnitId || !lat || !lng) return;
 
     try {
+      const latValue = Number.parseFloat(lat);
+      const lngValue = Number.parseFloat(lng);
+      const speedValue = Number.parseFloat(speed || "0");
+      const headingValue = Number.parseFloat(heading || "0");
+
+      if (!isValidCoord(latValue, lngValue)) {
+        setSaveMsg("Error: Latitude/longitude are out of range.");
+        return;
+      }
+      if (!Number.isFinite(speedValue) || speedValue < 0) {
+        setSaveMsg("Error: Speed must be 0 or greater.");
+        return;
+      }
+      if (!Number.isFinite(headingValue) || headingValue < 0 || headingValue > 360) {
+        setSaveMsg("Error: Heading must be between 0 and 360.");
+        return;
+      }
+
       setSaving(true);
       setSaveMsg(null);
       await invoke("unit_position_set", {
         unitId: selectedUnitId,
-        lat: parseFloat(lat),
-        lng: parseFloat(lng),
-        speed: parseFloat(speed || "0"),
-        heading: parseFloat(heading || "0"),
+        lat: latValue,
+        lng: lngValue,
+        speed: speedValue,
+        heading: headingValue,
       });
       setSaveMsg("Position updated!");
       // Reload units to show new position
