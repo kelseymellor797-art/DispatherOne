@@ -98,13 +98,13 @@ export function UnitsPanel() {
     if (!map) return;
 
     const currentIds = new Set<string>();
-    const bounds: L.LatLngExpression[] = [];
+    const bounds: L.LatLngTuple[] = [];
 
     for (const unit of units) {
       if (unit.lat === 0 && unit.lng === 0) continue;
 
       currentIds.add(unit.unit_id);
-      const pos: L.LatLngExpression = [unit.lat, unit.lng];
+      const pos: L.LatLngTuple = [unit.lat, unit.lng];
       bounds.push(pos);
 
       const existing = markersRef.current.get(unit.unit_id);
@@ -129,7 +129,7 @@ export function UnitsPanel() {
 
     // Fit bounds if there are markers
     if (bounds.length > 0) {
-      map.fitBounds(L.latLngBounds(bounds as L.LatLngTuple[]), { padding: [40, 40], maxZoom: 14 });
+      map.fitBounds(L.latLngBounds(bounds), { padding: [40, 40], maxZoom: 14 });
     }
   }, [units]);
 
@@ -138,8 +138,8 @@ export function UnitsPanel() {
 Lat: ${unit.lat.toFixed(6)}<br/>
 Lng: ${unit.lng.toFixed(6)}<br/>
 Speed: ${unit.speed.toFixed(1)} mph<br/>
-Heading: ${unit.heading.toFixed(0)}&deg;<br/>
-${unit.updated_at ? `Updated: ${new Date(unit.updated_at).toLocaleString()}` : "No position set"}`;
+Heading: ${unit.heading.toFixed(0)}°<br/>
+Updated: ${unit.updated_at ? new Date(unit.updated_at).toLocaleString() : "N/A"}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -314,7 +314,7 @@ ${unit.updated_at ? `Updated: ${new Date(unit.updated_at).toLocaleString()}` : "
                 />
               </label>
               <label className="form-field" style={{ flex: 1 }}>
-                Heading (&deg;)
+                Heading (°)
                 <input
                   type="number"
                   step="any"
