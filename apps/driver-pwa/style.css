@@ -1,0 +1,282 @@
+/* ================================================================
+   DispatcherOne – Driver PWA  ·  Styles
+   ================================================================ */
+
+:root {
+  --bg: #0f172a;
+  --surface: #1e293b;
+  --surface-hover: #334155;
+  --border: #334155;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --danger: #ef4444;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --radius: 10px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+}
+
+.screen {
+  width: 100%;
+  min-height: 100dvh;
+}
+
+/* ----------------------------------------------------------------
+   LOGIN
+   ---------------------------------------------------------------- */
+#login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  background: var(--surface);
+  padding: 2.5rem 2rem;
+  border-radius: var(--radius);
+  width: min(400px, 92vw);
+  border: 1px solid var(--border);
+}
+
+.login-card h1 {
+  font-size: 1.6rem;
+  margin-bottom: 0.2rem;
+}
+
+.login-card .subtitle {
+  color: var(--muted);
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+}
+
+.login-card label {
+  display: block;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-bottom: 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.login-card input {
+  display: block;
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 1rem;
+}
+
+.login-card input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.login-card button[type="submit"] {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.login-card button[type="submit"]:hover {
+  background: var(--accent-hover);
+}
+
+.error {
+  color: var(--danger);
+  font-size: 0.88rem;
+  margin-top: 0.8rem;
+}
+
+/* ----------------------------------------------------------------
+   DASHBOARD
+   ---------------------------------------------------------------- */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.2rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header-left h2 {
+  font-size: 1.2rem;
+}
+
+.driver-badge {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.header-right {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.icon-btn {
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn:hover {
+  background: var(--surface-hover);
+}
+
+main {
+  padding: 1rem;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--muted);
+  padding: 3rem 1rem;
+}
+
+/* ----------------------------------------------------------------
+   JOB CARD
+   ---------------------------------------------------------------- */
+.job-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  margin-bottom: 0.75rem;
+}
+
+.job-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.job-call-number {
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.job-status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid var(--border);
+}
+
+.job-status-badge.status-PENDING   { border-color: var(--warning); color: var(--warning); }
+.job-status-badge.status-ASSIGNED  { border-color: var(--accent);  color: var(--accent); }
+.job-status-badge.status-ACTIVE    { border-color: var(--success); color: var(--success); }
+.job-status-badge.status-EN_ROUTE  { border-color: #39d5ff;        color: #39d5ff; }
+.job-status-badge.status-94        { border-color: #ffd666;        color: #ffd666; }
+.job-status-badge.status-95        { border-color: #ff7b6b;        color: #ff7b6b; }
+.job-status-badge.status-97        { border-color: #6ee7b7;        color: #6ee7b7; }
+.job-status-badge.status-IN_TOW    { border-color: #8aa3ff;        color: #8aa3ff; }
+.job-status-badge.status-98        { border-color: var(--muted);   color: var(--muted); }
+
+.job-detail {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+
+.job-detail strong {
+  color: var(--text);
+}
+
+/* ---- status action buttons ---- */
+.status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.status-btn {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.status-btn:hover {
+  background: var(--surface-hover);
+}
+
+.status-btn.current {
+  border-color: var(--accent);
+  color: var(--accent);
+  pointer-events: none;
+}
+
+.status-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---- responsive ---- */
+@media (max-width: 480px) {
+  .login-card {
+    padding: 2rem 1.4rem;
+  }
+
+  header {
+    padding: 0.8rem 1rem;
+  }
+
+  main {
+    padding: 0.75rem;
+  }
+
+  .job-card {
+    padding: 0.8rem 1rem;
+  }
+}
