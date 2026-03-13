@@ -854,6 +854,8 @@ All WebSocket messages use a standard envelope:
 
 ### Call Status
 
+Numeric codes (`94`, `95`, `97`, `98`) are industry-standard tow dispatch radio codes.
+
 | Value | Description |
 |---|---|
 | `PENDING` | Call created, awaiting assignment |
