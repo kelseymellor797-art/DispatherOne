@@ -829,6 +829,8 @@ export default function App() {
   const [priorityLoading, setPriorityLoading] = useState(false);
   const [geocodeTestMode, setGeocodeTestMode] = useState(false);
   const [tesseractPath, setTesseractPath] = useState("");
+  const [serverUrl, setServerUrl] = useState("");
+  const [serverAuthToken, setServerAuthToken] = useState("");
   const [addCallError, setAddCallError] = useState("");
   const [ocrLoading, setOcrLoading] = useState<null | "pickup" | "dropoff">(null);
   const [ocrPreview, setOcrPreview] = useState<OcrImportPreview | null>(null);
@@ -1132,6 +1134,9 @@ export default function App() {
   const [drawerCallError, setDrawerCallError] = useState<string | null>(null);
   const [drawerEditing, setDrawerEditing] = useState(false);
   const [drawerSaving, setDrawerSaving] = useState(false);
+  const [trackingLinkUrl, setTrackingLinkUrl] = useState<string | null>(null);
+  const [trackingLinkLoading, setTrackingLinkLoading] = useState(false);
+  const [trackingLinkCopied, setTrackingLinkCopied] = useState(false);
   const [floatingDetail, setFloatingDetail] = useState<{
     callId: string;
     anchor: { top: number; left: number };
@@ -1894,6 +1899,61 @@ export default function App() {
     }
   };
 
+  const handleGenerateTrackingLink = async () => {
+    const call = drawerCallDetail?.call ?? null;
+    if (!call || !drawerCallId) return;
+    setTrackingLinkLoading(true);
+    setTrackingLinkCopied(false);
+    try {
+      const serverUrl = (
+        (await invoke("settings_get", { keys: ["server.url"] })) as Record<string, string>
+      )["server.url"];
+      if (!serverUrl) {
+        setTrackingLinkUrl(null);
+        setTrackingLinkLoading(false);
+        setDrawerCallError("Set Server URL in Settings before generating tracking links.");
+        return;
+      }
+      const authToken = (
+        (await invoke("settings_get", { keys: ["server.auth_token"] })) as Record<string, string>
+      )["server.auth_token"];
+      if (!authToken) {
+        setTrackingLinkUrl(null);
+        setTrackingLinkLoading(false);
+        setDrawerCallError("Set Server Auth Token in Settings before generating tracking links.");
+        return;
+      }
+      const pickupCity = call.pickup_address
+        ? call.pickup_address.split(",").slice(-2, -1)[0]?.trim() ?? null
+        : null;
+      const base = serverUrl.replace(/\/+$/, "");
+      const resp = await fetch(`${base}/calls/${encodeURIComponent(drawerCallId)}/tracking-link`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-auth-token": authToken,
+        },
+        body: JSON.stringify({
+          status: call.status,
+          status_updated_at: call.status_updated_at,
+          pickup_city: pickupCity,
+          eta_minutes: null,
+        }),
+      });
+      if (!resp.ok) {
+        const detail = await resp.text();
+        throw new Error(`Server returned ${resp.status}: ${detail}`);
+      }
+      const data = (await resp.json()) as { token: string; url: string };
+      setTrackingLinkUrl(data.url);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setDrawerCallError(message);
+    } finally {
+      setTrackingLinkLoading(false);
+    }
+  };
+
   const handleOverMilesCalculate = async () => {
     if (!isTauri) {
       setOverMilesError("Over miles calculation requires the desktop app.");
@@ -2204,6 +2264,8 @@ export default function App() {
     let active = true;
     setDrawerCallLoading(true);
     setDrawerCallError(null);
+    setTrackingLinkUrl(null);
+    setTrackingLinkCopied(false);
     (async () => {
       try {
         const detail = (await invoke("call_get", { callId: drawerCallId })) as CallDetail;
@@ -3014,6 +3076,8 @@ export default function App() {
       "priority.group.COD",
       "geocode.test_mode",
       "tesseract.path",
+      "server.url",
+      "server.auth_token",
     ];
     void invoke("settings_get", { keys })
       .then((res) => {
@@ -3022,6 +3086,8 @@ export default function App() {
         setPrioritySettings(values);
         setGeocodeTestMode((values["geocode.test_mode"] ?? "false") === "true");
         setTesseractPath(values["tesseract.path"] ?? "");
+        setServerUrl(values["server.url"] ?? "");
+        setServerAuthToken(values["server.auth_token"] ?? "");
       })
       .finally(() => {
         if (!active) return;
@@ -6054,6 +6120,59 @@ export default function App() {
                     </>
                   ) : null}
                 </div>
+
+                <div className="detail-section-header">
+                  <span>Customer Tracking</span>
+                </div>
+                <div className="detail-grid-rows">
+                  {trackingLinkUrl ? (
+                    <>
+                      <div className="detail-row detail-row-wide">
+                        <span>Tracking Link</span>
+                        <span style={{ wordBreak: "break-all", fontSize: ".8rem" }}>
+                          {trackingLinkUrl}
+                        </span>
+                      </div>
+                      <div className="detail-row detail-row-wide" style={{ borderBottom: "none" }}>
+                        <span />
+                        <span>
+                          <button
+                            className="ghost-button"
+                            onClick={() => {
+                              void navigator.clipboard.writeText(trackingLinkUrl).then(() => {
+                                setTrackingLinkCopied(true);
+                                setTimeout(() => setTrackingLinkCopied(false), 2000);
+                              });
+                            }}
+                          >
+                            {trackingLinkCopied ? "Copied!" : "Copy Link"}
+                          </button>
+                          <button
+                            className="ghost-button"
+                            style={{ marginLeft: 8 }}
+                            onClick={() => void handleGenerateTrackingLink()}
+                            disabled={trackingLinkLoading}
+                          >
+                            {trackingLinkLoading ? "Rotating…" : "Rotate Link"}
+                          </button>
+                        </span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="detail-row detail-row-wide" style={{ borderBottom: "none" }}>
+                      <span />
+                      <span>
+                        <button
+                          className="ghost-button"
+                          onClick={() => void handleGenerateTrackingLink()}
+                          disabled={trackingLinkLoading}
+                        >
+                          {trackingLinkLoading ? "Generating…" : "Generate Tracking Link"}
+                        </button>
+                      </span>
+                    </div>
+                  )}
+                </div>
               </>
             )}
           </div>
@@ -8993,6 +9112,39 @@ export default function App() {
                 const value = event.target.value;
                 setTesseractPath(value);
                 void invoke("settings_set", { key: "tesseract.path", value });
+              }}
+            />
+          </label>
+        </section>
+
+        <section className="detail-card">
+          <h2>Tracking Server</h2>
+          <p className="content-subtitle">
+            Server URL and auth token used when generating customer tracking links.
+          </p>
+          <label className="form-field detail-row-wide">
+            Server URL
+            <input
+              type="text"
+              value={serverUrl}
+              placeholder="http://localhost:8000"
+              onChange={(event) => {
+                const value = event.target.value;
+                setServerUrl(value);
+                void invoke("settings_set", { key: "server.url", value });
+              }}
+            />
+          </label>
+          <label className="form-field detail-row-wide">
+            Auth Token
+            <input
+              type="password"
+              value={serverAuthToken}
+              placeholder="Paste token from /login"
+              onChange={(event) => {
+                const value = event.target.value;
+                setServerAuthToken(value);
+                void invoke("settings_set", { key: "server.auth_token", value });
               }}
             />
           </label>
