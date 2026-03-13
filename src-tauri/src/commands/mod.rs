@@ -11,3 +11,4 @@ pub mod reports;
 pub mod search;
 pub mod settings;
 pub mod shifts;
+pub mod units;

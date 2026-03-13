@@ -126,6 +126,11 @@ fn migrations() -> Vec<(&'static str, &'static str, &'static str)> {
             "0017_contact_id.sql",
             include_str!("./migrations/0017_contact_id.sql"),
         ),
+        (
+            "0018",
+            "0018_unit_positions.sql",
+            include_str!("./migrations/0018_unit_positions.sql"),
+        ),
     ]
 }
 
@@ -197,3 +202,4 @@ pub mod ocr_repo;
 pub mod search_repo;
 pub mod settings_repo;
 pub mod shifts_repo;
+pub mod units_repo;

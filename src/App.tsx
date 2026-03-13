@@ -3,6 +3,7 @@ import { emit, listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow, LogicalPosition, LogicalSize, monitorFromPoint, primaryMonitor } from "@tauri-apps/api/window";
+import { UnitsPanel } from "./components/UnitsPanel";
 type Day = "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | "Sat" | "Sun";
 
 type Tab = {
@@ -297,6 +298,19 @@ const tabs: Tab[] = [
         <rect x="4" y="14.5" width="16" height="4.5" rx="2.2" fill="currentColor" />
         <circle cx="8" cy="18.5" r="1.4" fill="rgba(5, 6, 8, 0.9)" />
         <circle cx="16" cy="18.5" r="1.4" fill="rgba(5, 6, 8, 0.9)" />
+      </svg>
+    ),
+  },
+  {
+    id: "units",
+    label: "Units",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <rect x="3" y="11" width="18" height="8" rx="2" fill="currentColor" />
+        <circle cx="7.5" cy="19" r="1.5" fill="currentColor" />
+        <circle cx="16.5" cy="19" r="1.5" fill="currentColor" />
+        <path d="M5 11V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3" fill="currentColor" />
+        <circle cx="12" cy="4" r="1.2" fill="currentColor" />
       </svg>
     ),
   },
@@ -9165,6 +9179,8 @@ export default function App() {
         </section>
       </>
     );
+  } else if (activeTabId === "units") {
+    contentBody = <UnitsPanel />;
   } else if (activeTabId === "drivers") {
     contentBody = (
       <>
@@ -9820,7 +9836,7 @@ export default function App() {
         </nav>
 
         <div className="panel-footer">
-          <div className="shortcut-hint">Ctrl/⌘ + 1-5</div>
+          <div className="shortcut-hint">Ctrl/⌘ + 1-6</div>
         </div>
       </aside>
       )}
