@@ -22,6 +22,10 @@ Software to install
 - Node.js
 - Python (optional)
 
+## Documentation
+
+- [API Contract v0](docs/api-contract-v0.md) — REST endpoints, WebSocket events, DB schema, and RBAC rules for the cloud SaaS MVP
+
 ## Why this works for a dispatcher system
 - Cross-platform for macOS + Windows 11
 - Easy forms, tables, dashboards
