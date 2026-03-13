@@ -692,7 +692,6 @@ const WEEKLY_SCHEDULE_DRAWER_HEIGHT = 760;
 const WEEKLY_SCHEDULE_ADJUSTED_HEIGHT = WEEKLY_SCHEDULE_DRAWER_HEIGHT + WEEKLY_SCHEDULE_WINDOW_PADDING;
 const WEEKLY_SCHEDULE_Y_OFFSET = 84;
 const DRAWER_SCREEN_MARGIN = 16;
-const WINDOW_HEIGHT = 900;
 const ADD_CALL_DEFAULT_HEIGHT = 746.14;
 const DRAWER_LABEL = "drawer";
 const isEscapeKey = (event: KeyboardEvent): boolean =>
@@ -773,7 +772,6 @@ export default function App() {
     const stored = localStorage.getItem(ALWAYS_ON_TOP_KEY);
     return stored === "false" ? false : true;
   });
-  const floatingWindowRef = useRef<Window | null>(null);
   const drawerModeRef = useRef<"call-detail" | "weekly-schedule" | null>(null);
   const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const nonMainShellRef = useRef<HTMLDivElement | null>(null);
@@ -846,8 +844,8 @@ export default function App() {
   const [addCallError, setAddCallError] = useState("");
   const [ocrLoading, setOcrLoading] = useState<null | "pickup" | "dropoff">(null);
   const [ocrPreview, setOcrPreview] = useState<OcrImportPreview | null>(null);
-  const [ocrNotice, setOcrNotice] = useState<string | null>(null);
-  const [ocrLastTemplate, setOcrLastTemplate] = useState<"ACE_PICKUP" | "ACE_DROPOFF" | null>(null);
+  const [, setOcrNotice] = useState<string | null>(null);
+  const [, setOcrLastTemplate] = useState<"ACE_PICKUP" | "ACE_DROPOFF" | null>(null);
   const [ocrImportIds, setOcrImportIds] = useState<{ pickup?: string; dropoff?: string }>({});
   const [ocrConfirm, setOcrConfirm] = useState<{
     preview: OcrImportPreview;
@@ -857,12 +855,12 @@ export default function App() {
     validationError?: string | null;
     validating?: boolean;
   } | null>(null);
-  const [pickupValidation, setPickupValidation] = useState<AddressValidation>({
+  const [, setPickupValidation] = useState<AddressValidation>({
     status: "unvalidated",
     input: "",
     result: null,
   });
-  const [dropoffValidation, setDropoffValidation] = useState<AddressValidation>({
+  const [, setDropoffValidation] = useState<AddressValidation>({
     status: "unvalidated",
     input: "",
     result: null,
@@ -877,7 +875,6 @@ export default function App() {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastVisible, setToastVisible] = useState(false);
   const toastTimerRef = useRef<number | null>(null);
-  const ocrTextRef = useRef<HTMLTextAreaElement | null>(null);
   const ocrCaptureRequestSeqRef = useRef(0);
   const activeOcrCaptureRequestRef = useRef<number | null>(null);
   const canceledOcrCaptureRequestsRef = useRef<Set<number>>(new Set());
@@ -1181,7 +1178,6 @@ export default function App() {
     return tabs[activeIndex]?.label ?? "";
   }, [activeIndex, reportTabId]);
   const activeTabId = reportTabId ?? tabs[activeIndex]?.id ?? "calls";
-  const contentKicker = isReportWindow ? "Report window" : "Home screen";
   const scheduleShiftLookup = useMemo(() => {
     const map = new Map<string, DriverShiftRecord>();
     scheduleShifts.forEach((shift) => {
@@ -1949,67 +1945,6 @@ export default function App() {
       setOverMilesError(error instanceof Error ? error.message : String(error));
     } finally {
       setOverMilesLoading(false);
-    }
-  };
-
-  const handleTowMilesRecalculate = async () => {
-    if (!isTauri) {
-      setTowMilesError("Tow miles requires the desktop app.");
-      return;
-    }
-    const pickup = callDraft.pickupLocation.trim();
-    const dropoff = callDraft.dropoffLocation.trim();
-    if (!pickup || !dropoff) {
-      setTowMilesError("Pickup and dropoff addresses are required.");
-      return;
-    }
-    if (pickupValidation.status === "unvalidated" || dropoffValidation.status === "unvalidated") {
-      setTowMilesError("Confirm both pickup and dropoff addresses first.");
-      return;
-    }
-    setTowMilesLoading(true);
-    setTowMilesError(null);
-    try {
-      const origin =
-        pickupValidation.status === "validated" && pickupValidation.result
-          ? `${pickupValidation.result.lat},${pickupValidation.result.lng}`
-          : pickup;
-      const destination =
-        dropoffValidation.status === "validated" && dropoffValidation.result
-          ? `${dropoffValidation.result.lat},${dropoffValidation.result.lng}`
-          : dropoff;
-      const payload = {
-        origin,
-        destination,
-        origin_lat:
-          pickupValidation.status === "validated" && pickupValidation.result
-            ? pickupValidation.result.lat
-            : null,
-        origin_lng:
-          pickupValidation.status === "validated" && pickupValidation.result
-            ? pickupValidation.result.lng
-            : null,
-        destination_lat:
-          dropoffValidation.status === "validated" && dropoffValidation.result
-            ? dropoffValidation.result.lat
-            : null,
-        destination_lng:
-          dropoffValidation.status === "validated" && dropoffValidation.result
-            ? dropoffValidation.result.lng
-            : null,
-      };
-      const result = (await invoke("google_distance_matrix", payload)) as {
-        meters: number;
-        seconds?: number | null;
-      };
-      const miles = Number(result.meters) * 0.000_621_371;
-      setTowMiles(miles);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      setTowMilesError(message);
-      setTowMiles(null);
-    } finally {
-      setTowMilesLoading(false);
     }
   };
 
@@ -3147,21 +3082,6 @@ export default function App() {
     return () => window.clearInterval(timer);
   }, [captureCountdown]);
 
-  const handleFloatingClick = () => {
-    if (isFloatingWindow) {
-      window.close();
-      return;
-    }
-
-    const tabId = tabs[activeIndex]?.id ?? "calls";
-    const floatingUrl = `${window.location.pathname}?floating=${tabId}`;
-    floatingWindowRef.current = window.open(
-      floatingUrl,
-      `${tabId}-floating`,
-      "width=900,height=700"
-      );
-  };
-
   const handleOpenReportWindow = async (kind: "daily" | "driver") => {
     const label = `report-${kind}`;
     const url = `${window.location.pathname}?report=${kind}`;
@@ -3861,14 +3781,6 @@ export default function App() {
     return Math.round(overMiles * 12);
   }, [overMiles]);
 
-  const showOverMilesSection = useMemo(() => {
-    if (callDraft.callType !== "AAA") return false;
-    if (towMiles == null) return false;
-    if (isRvCoverage) return true;
-    if (coveredMiles == null) return false;
-    return towMiles > coveredMiles;
-  }, [callDraft.callType, towMiles, coveredMiles, isRvCoverage]);
-
   const overMilesChecklistComplete = useMemo(() => {
     if (overMiles == null || overMiles <= 0) return true;
     if (!overMilesChecklist.calledMember) return false;
@@ -3920,75 +3832,6 @@ export default function App() {
         setOcrLoading(null);
       }
     }
-  };
-
-  const handleOcrUpload = async (templateType: "ACE_PICKUP" | "ACE_DROPOFF") => {
-    if (!isTauri) {
-      alert("OCR upload is only available in the Tauri app.");
-      return;
-    }
-    setOcrNotice("Selecting file…");
-    try {
-      const selection = (await invoke("ocr_pick_image_path")) as string | null;
-      if (!selection) {
-        setOcrNotice("No file selected.");
-        return;
-      }
-      setOcrNotice("Running OCR…");
-      setOcrLoading(templateType === "ACE_PICKUP" ? "pickup" : "dropoff");
-      const preview = (await invoke("ocr_import_image_path", {
-        templateType,
-        filePath: selection,
-      })) as OcrImportPreview;
-      setOcrPreview(preview);
-      setOcrImportIds((prev) => ({
-        ...prev,
-        [templateType === "ACE_PICKUP" ? "pickup" : "dropoff"]: preview.import_id,
-      }));
-      setOcrLastTemplate(templateType);
-      if (templateType === "ACE_DROPOFF" && !preview.dropoff_address) {
-        setOcrNotice("Dropoff address not found in OCR. Try a clearer screenshot.");
-      } else if (!hasParsedOcrFields(preview)) {
-        setOcrNotice("OCR finished, but no fields were detected. Open the OCR text below.");
-      } else {
-        setOcrNotice(null);
-      }
-      openOcrConfirm(preview, templateType);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      setOcrNotice(`OCR failed: ${message}`);
-      alert(message);
-    } finally {
-      setOcrLoading(null);
-    }
-  };
-
-  const handleCopyOcrText = async (text: string) => {
-    try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-      } else {
-        const textarea = document.createElement("textarea");
-        textarea.value = text;
-        textarea.style.position = "fixed";
-        textarea.style.opacity = "0";
-        document.body.appendChild(textarea);
-        textarea.focus();
-        textarea.select();
-        document.execCommand("copy");
-        textarea.remove();
-      }
-      showToast("OCR text copied.");
-    } catch {
-      showToast("Failed to copy OCR text.");
-    }
-  };
-
-  const handleSelectOcrText = () => {
-    const el = ocrTextRef.current;
-    if (!el) return;
-    el.focus();
-    el.select();
   };
 
   const mapCallType = (callType: string, lawAgency: string) => {
