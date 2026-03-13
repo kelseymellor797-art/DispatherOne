@@ -8,6 +8,7 @@
   // ---- Configuration -------------------------------------------------
   // API base URL – default to same origin; override via localStorage
   const API = localStorage.getItem("api_url") || window.location.origin;
+  const API_URL = new URL(API, window.location.origin);
 
   // Canonical statuses in progression order
   const STATUS_ORDER = [
@@ -39,6 +40,7 @@
   let driverId = localStorage.getItem("driver_id") || null;
   let driverName = localStorage.getItem("driver_name") || "";
   let ws = null;
+  let wsReconnectTimer = null;
 
   // ---- DOM refs ------------------------------------------------------
   const loginScreen = document.getElementById("login-screen");
@@ -54,18 +56,32 @@
 
   // ---- Helpers -------------------------------------------------------
   async function api(method, path, body) {
-    const headers = { "Content-Type": "application/json" };
+    const headers = {};
+    if (body !== undefined) headers["Content-Type"] = "application/json";
     if (token) headers["X-Auth-Token"] = token;
-    const res = await fetch(`${API}${path}`, {
+
+    const res = await fetch(new URL(path, API_URL), {
       method,
       headers,
-      body: body ? JSON.stringify(body) : undefined,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
     });
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ detail: res.statusText }));
-      throw new Error(err.detail || "Request failed");
+
+    const text = await res.text();
+    let data = null;
+    if (text) {
+      try {
+        data = JSON.parse(text);
+      } catch {
+        data = { detail: text };
+      }
     }
-    return res.json();
+
+    if (!res.ok) {
+      const err = new Error((data && data.detail) || res.statusText || "Request failed");
+      err.status = res.status;
+      throw err;
+    }
+    return data;
   }
 
   function show(el) {
@@ -116,6 +132,10 @@
     localStorage.removeItem("driver_token");
     localStorage.removeItem("driver_id");
     localStorage.removeItem("driver_name");
+    if (wsReconnectTimer) {
+      clearTimeout(wsReconnectTimer);
+      wsReconnectTimer = null;
+    }
     if (ws) {
       ws.close();
       ws = null;
@@ -127,9 +147,9 @@
   async function loadJobs() {
     try {
       const jobs = await api("GET", "/driver/jobs");
-      renderJobs(jobs);
+      renderJobs(Array.isArray(jobs) ? jobs : []);
     } catch (err) {
-      if (err.message === "Unauthorized") {
+      if (err.status === 401) {
         logoutBtn.click();
         return;
       }
@@ -139,7 +159,7 @@
 
   function escapeHtml(str) {
     const d = document.createElement("div");
-    d.textContent = str;
+    d.textContent = str == null ? "" : String(str);
     return d.innerHTML;
   }
 
@@ -151,7 +171,8 @@
 
     jobsList.innerHTML = jobs
       .map((job) => {
-        const callNum = job.external_call_number || job.id.slice(0, 8);
+        const jobId = String(job.id || "");
+        const callNum = job.external_call_number || jobId.slice(0, 8);
         const statusLabel = STATUS_LABELS[job.status] || job.status;
 
         const buttons = STATUS_ORDER.filter((s) => s !== "PENDING") // drivers don't set PENDING
@@ -159,7 +180,7 @@
             const isCurrent = s === job.status;
             return `<button
               class="status-btn${isCurrent ? " current" : ""}"
-              data-job-id="${job.id}"
+              data-job-id="${escapeHtml(jobId)}"
               data-status="${s}"
               ${isCurrent ? "disabled" : ""}
             >${STATUS_LABELS[s] || s}</button>`;
@@ -167,7 +188,7 @@
           .join("");
 
         return `
-        <div class="job-card" data-job-id="${job.id}">
+        <div class="job-card" data-job-id="${escapeHtml(jobId)}">
           <div class="job-header">
             <span class="job-call-number">${escapeHtml(callNum)}</span>
             <span class="job-status-badge status-${job.status}">${escapeHtml(statusLabel)}</span>
@@ -189,9 +210,11 @@
 
     const jobId = btn.dataset.jobId;
     const newStatus = btn.dataset.status;
+    if (!jobId || !newStatus) return;
 
     // Disable all buttons in this card while updating
     const card = btn.closest(".job-card");
+    if (!card) return;
     const buttons = card.querySelectorAll(".status-btn");
     buttons.forEach((b) => (b.disabled = true));
 
@@ -211,8 +234,16 @@
     if (ws) ws.close();
     if (!token) return;
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${new URL(API).host}/driver/ws?token=${encodeURIComponent(token)}`;
+    if (wsReconnectTimer) {
+      clearTimeout(wsReconnectTimer);
+      wsReconnectTimer = null;
+    }
+
+    const wsBase = new URL(API_URL);
+    wsBase.protocol = wsBase.protocol === "https:" ? "wss:" : "ws:";
+    wsBase.pathname = "/driver/ws";
+    wsBase.search = new URLSearchParams({ token }).toString();
+    const wsUrl = wsBase.toString();
 
     ws = new WebSocket(wsUrl);
 
@@ -230,7 +261,7 @@
     ws.addEventListener("close", () => {
       // Reconnect after a delay if still authenticated
       if (token) {
-        setTimeout(connectWS, 3000);
+        wsReconnectTimer = setTimeout(connectWS, 3000);
       }
     });
   }
