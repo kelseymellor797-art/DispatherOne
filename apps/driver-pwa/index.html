@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#1e293b" />
+  <meta name="description" content="DispatcherOne Driver Dashboard" />
+  <link rel="manifest" href="manifest.json" />
+  <title>DispatcherOne – Driver</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- ============================================================ -->
+  <!-- LOGIN SCREEN                                                  -->
+  <!-- ============================================================ -->
+  <div id="login-screen" class="screen">
+    <div class="login-card">
+      <h1>DispatcherOne</h1>
+      <p class="subtitle">Driver Login</p>
+      <form id="login-form" autocomplete="on">
+        <label for="email">Email</label>
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          autocomplete="email"
+          placeholder="you@example.com"
+        />
+        <label for="password">Password</label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          autocomplete="current-password"
+          placeholder="••••••••"
+        />
+        <button type="submit" id="login-btn">Sign In</button>
+        <p id="login-error" class="error" hidden></p>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- DASHBOARD SCREEN                                              -->
+  <!-- ============================================================ -->
+  <div id="dashboard-screen" class="screen" hidden>
+    <header>
+      <div class="header-left">
+        <h2>My Jobs</h2>
+        <span id="driver-name" class="driver-badge"></span>
+      </div>
+      <div class="header-right">
+        <button id="refresh-btn" class="icon-btn" title="Refresh">&#x21bb;</button>
+        <button id="logout-btn" class="icon-btn" title="Log out">&#x2716;</button>
+      </div>
+    </header>
+
+    <main id="jobs-list">
+      <p class="empty-state">Loading jobs…</p>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

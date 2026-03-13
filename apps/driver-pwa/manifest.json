@@ -1,0 +1,10 @@
+{
+  "name": "DispatcherOne Driver",
+  "short_name": "D1 Driver",
+  "description": "Driver dashboard for DispatcherOne",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#1e293b",
+  "icons": []
+}
