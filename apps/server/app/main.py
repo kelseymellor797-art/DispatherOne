@@ -9,7 +9,8 @@ from typing import Optional
 
 from fastapi import Depends, FastAPI, Header, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from hashlib import sha256
+import hashlib
+import hmac
 from pydantic import BaseModel
 
 from app.models import (
@@ -42,6 +43,7 @@ app.add_middleware(
 VALID_STATUSES = frozenset(
     ["PENDING", "ASSIGNED", "ACTIVE", "EN_ROUTE", "94", "95", "97", "IN_TOW", "98"]
 )
+STATUS_COMPLETED = "98"
 
 # ---------------------------------------------------------------------------
 # Admin auth (unchanged)
@@ -62,18 +64,23 @@ DRIVER_TOKENS: dict[str, str] = {}  # token → driver_id
 
 
 def _hash_password(password: str) -> str:
-    """Simple salted SHA-256 hash (no extra dependency needed)."""
-    salt = secrets.token_hex(16)
-    digest = sha256(f"{salt}${password}".encode()).hexdigest()
-    return f"{salt}${digest}"
+    """PBKDF2-based password hash (standard library, no extra dependency)."""
+    salt = secrets.token_bytes(16)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, iterations=260_000)
+    return f"{salt.hex()}${dk.hex()}"
 
 
 def _verify_password(password: str, pw_hash: str) -> bool:
     parts = pw_hash.split("$", 1)
     if len(parts) != 2:
         return False
-    salt, stored_digest = parts
-    return sha256(f"{salt}${password}".encode()).hexdigest() == stored_digest
+    salt_hex, stored_dk_hex = parts
+    try:
+        salt = bytes.fromhex(salt_hex)
+    except ValueError:
+        return False
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, iterations=260_000)
+    return hmac.compare_digest(dk.hex(), stored_dk_hex)
 
 
 def require_driver_token(x_auth_token: Optional[str] = Header(default=None)) -> str:
@@ -223,9 +230,9 @@ def driver_jobs(driver_id: str = Depends(require_driver_token)):
                       status, status_updated_at::text, vehicle_description, notes,
                       created_at::text, updated_at::text
                FROM jobs
-               WHERE assigned_driver_id = %s AND status != '98'
+               WHERE assigned_driver_id = %s AND status != %s
                ORDER BY created_at DESC""",
-            [driver_id],
+            [driver_id, STATUS_COMPLETED],
         ).fetchall()
     return [JobOut(**r) for r in rows]
 

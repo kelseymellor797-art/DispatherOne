@@ -22,8 +22,11 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // Only cache same-origin shell assets; API calls go to network
-  if (url.origin === self.location.origin && !url.pathname.startsWith("/driver/") && !url.pathname.startsWith("/login") && !url.pathname.startsWith("/health")) {
+  // Only cache same-origin shell assets; let API calls go to network
+  const apiPrefixes = ["/driver/", "/login", "/health"];
+  const isApiCall = apiPrefixes.some((p) => url.pathname.startsWith(p));
+
+  if (url.origin === self.location.origin && !isApiCall) {
     event.respondWith(
       caches.match(event.request).then((cached) => cached || fetch(event.request))
     );
