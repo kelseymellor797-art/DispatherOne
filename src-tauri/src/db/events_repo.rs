@@ -115,3 +115,40 @@ pub fn driver_lunch_start_map(conn: &Connection) -> Result<Vec<(String, String)>
     let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?;
     Ok(rows.collect::<std::result::Result<Vec<_>, _>>()?)
 }
+
+/// Returns total elapsed lunch milliseconds for each driver, summed across all completed
+/// (started → paused/ended) lunch segments.  The currently-running segment (if any) is
+/// NOT included — the caller adds `now - lunchStartAt` on the frontend.
+pub fn driver_lunch_total_elapsed_ms_map(conn: &Connection) -> Result<Vec<(String, i64)>> {
+    let mut stmt = conn.prepare(
+        r#"
+        WITH starts AS (
+            SELECT entity_id,
+                   timestamp,
+                   ROW_NUMBER() OVER (PARTITION BY entity_id ORDER BY timestamp) AS rn
+            FROM events
+            WHERE entity_type = 'DRIVER'
+              AND event_type = 'DRIVER_STATUS_CHANGED'
+              AND metadata_json LIKE '%"to":"ON_LUNCH"%'
+        ),
+        ends AS (
+            SELECT entity_id,
+                   timestamp,
+                   ROW_NUMBER() OVER (PARTITION BY entity_id ORDER BY timestamp) AS rn
+            FROM events
+            WHERE entity_type = 'DRIVER'
+              AND event_type = 'DRIVER_STATUS_CHANGED'
+              AND metadata_json LIKE '%"from":"ON_LUNCH"%'
+              AND metadata_json LIKE '%"to":"AVAILABLE"%'
+        )
+        SELECT s.entity_id,
+               CAST(SUM((julianday(e.timestamp) - julianday(s.timestamp)) * 86400000.0) AS INTEGER)
+        FROM starts s
+        JOIN ends e ON s.entity_id = e.entity_id AND s.rn = e.rn
+        GROUP BY s.entity_id
+        "#,
+    )?;
+
+    let rows = stmt.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?;
+    Ok(rows.collect::<std::result::Result<Vec<_>, _>>()?)
+}
