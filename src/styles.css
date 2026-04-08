@@ -1304,6 +1304,9 @@ body {
 .call-card-header h3 {
   margin: 0;
   font-size: 1.1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .call-header-left,
@@ -1311,15 +1314,23 @@ body {
 .call-header-right {
   display: grid;
   gap: 6px;
+  min-width: 0;
+}
+
+.call-header-left {
+  flex: 1 1 0;
+  overflow: hidden;
 }
 
 .call-header-center {
   align-items: center;
   justify-items: center;
+  flex: 0 0 auto;
 }
 
 .call-header-right {
   justify-items: end;
+  flex: 0 0 auto;
 }
 
 .call-subtext {
@@ -1382,10 +1393,31 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-size: 0.72rem;
+  flex-shrink: 0;
 }
 
 .call-value {
   text-align: right;
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+.call-agency-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 199, 76, 0.15);
+  border: 1px solid rgba(255, 199, 76, 0.55);
+  color: #ffd666;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .call-status-buttons {
@@ -1506,10 +1538,35 @@ body {
 
 .call-queue-row {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr) auto;
   gap: 8px;
   font-size: 0.82rem;
   color: var(--text);
+  align-items: center;
+}
+
+.call-queue-type {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.call-queue-address {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.call-queue-tow {
+  font-size: 0.78rem;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .call-queue-row[draggable],
@@ -1760,11 +1817,20 @@ body {
   font-size: 1.1rem;
 }
 
+.pending-call-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
 .pending-call-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .pending-assign-inline {
@@ -1822,6 +1888,8 @@ body {
   border: 1px solid rgba(120, 160, 200, 0.2);
   background: rgba(8, 13, 20, 0.75);
   font-size: 0.85rem;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .pending-field span:first-child {
@@ -1829,6 +1897,11 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.12em;
   font-size: 0.68rem;
+}
+
+.pending-field span:last-child {
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .pending-field.wide {
