@@ -205,6 +205,21 @@ type DriverCallReportItem = {
   en_route_at?: string | null;
 };
 
+type CallHistoryItem = {
+  call_id: string;
+  external_call_number?: string | null;
+  source_type: string;
+  law_agency?: string | null;
+  pickup_address: string;
+  dropoff_address?: string | null;
+  vehicle_description?: string | null;
+  notes?: string | null;
+  driver_name?: string | null;
+  outcome?: string | null;
+  closed_at?: string | null;
+  created_at: string;
+};
+
 type EventLogItem = {
   id: string;
   timestamp: string;
@@ -338,6 +353,16 @@ const tabs: Tab[] = [
           d="M16.4 6.2l1.6 1.1 1.9-.4.4 2-1.4 1.2.5 1.9-2 .6-1.2-1.5-1.9.5-.7-2 1.6-1.1-.3-2 2-.3z"
           fill="currentColor"
         />
+      </svg>
+    ),
+  },
+  {
+    id: "call-history",
+    label: "Call History",
+    icon: (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M13 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7V3z" fill="currentColor" />
+        <path d="M13 3v6l4 2-1.7 3L11 12V3h2z" fill="currentColor" />
       </svg>
     ),
   },
@@ -779,6 +804,20 @@ export default function App() {
   const [dailyReportError, setDailyReportError] = useState<string | null>(null);
   const [dailyReportDetails, setDailyReportDetails] = useState<Record<string, CallDetail>>({});
   const [dailyReportNotes, setDailyReportNotes] = useState("");
+  const [callHistory, setCallHistory] = useState<CallHistoryItem[]>([]);
+  const [callHistoryLoading, setCallHistoryLoading] = useState(false);
+  const [callHistoryError, setCallHistoryError] = useState<string | null>(null);
+  const [historySearch, setHistorySearch] = useState("");
+  const [historyStartDate, setHistoryStartDate] = useState(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return dateKey(d);
+  });
+  const [historyEndDate, setHistoryEndDate] = useState(() => dateKey(new Date()));
+  const [historyAgencyFilter, setHistoryAgencyFilter] = useState("");
+  const [historySelectedCallId, setHistorySelectedCallId] = useState<string | null>(null);
+  const [isClearHistoryOpen, setIsClearHistoryOpen] = useState(false);
+  const [clearHistoryLoading, setClearHistoryLoading] = useState(false);
   const [pauseLunchAt, setPauseLunchAt] = useState<Record<string, string>>({});
   const [lunchStartAt, setLunchStartAt] = useState<Record<string, string>>({});
   const [eventLogItems, setEventLogItems] = useState<EventLogItem[]>([]);
@@ -2146,6 +2185,23 @@ export default function App() {
     return driverReport.filter((item) => item.outcome === reportStatusFilter);
   }, [driverReport, reportStatusFilter]);
 
+  const filteredCallHistory = useMemo(() => {
+    const q = historySearch.trim().toLowerCase();
+    if (!q) return callHistory;
+    return callHistory.filter((item) => {
+      return (
+        (item.external_call_number ?? "").toLowerCase().includes(q) ||
+        item.call_id.toLowerCase().includes(q) ||
+        item.pickup_address.toLowerCase().includes(q) ||
+        (item.dropoff_address ?? "").toLowerCase().includes(q) ||
+        (item.notes ?? "").toLowerCase().includes(q) ||
+        (item.vehicle_description ?? "").toLowerCase().includes(q) ||
+        (item.driver_name ?? "").toLowerCase().includes(q) ||
+        (item.law_agency ?? "").toLowerCase().includes(q)
+      );
+    });
+  }, [callHistory, historySearch]);
+
   const storageCalendarCells = useMemo(
     () => buildMonthGrid(storageCalendarMonth),
     [storageCalendarMonth]
@@ -2363,6 +2419,29 @@ export default function App() {
     const key = `daily-report-notes-${dateKey(new Date(nowMs))}`;
     localStorage.setItem(key, dailyReportNotes);
   }, [activeTabId, dailyReportNotes, nowMs]);
+
+  const refreshCallHistory = useCallback(async () => {
+    if (!isTauri) return;
+    setCallHistoryLoading(true);
+    try {
+      const data = (await invoke("call_history_list", {
+        startDate: new Date(historyStartDate + "T00:00:00").toISOString(),
+        endDate: new Date(historyEndDate + "T23:59:59").toISOString(),
+        lawAgency: historyAgencyFilter.trim() || null,
+      })) as CallHistoryItem[];
+      setCallHistory(data);
+      setCallHistoryError(null);
+    } catch (error) {
+      setCallHistoryError(error instanceof Error ? error.message : "Failed to load history");
+    } finally {
+      setCallHistoryLoading(false);
+    }
+  }, [isTauri, historyStartDate, historyEndDate, historyAgencyFilter]);
+
+  useEffect(() => {
+    if (activeTabId !== "call-history") return;
+    void refreshCallHistory();
+  }, [activeTabId, refreshCallHistory]);
 
   useEffect(() => {
     if (isDrawerWindow) return;
@@ -4300,6 +4379,29 @@ export default function App() {
       await closeDrawerWindow();
     } else {
       setIsAddCallOpen(false);
+    }
+  };
+
+  const handleClearHistory = async () => {
+    if (!isTauri) {
+      showToast("Clear history is only available in the desktop app.");
+      return;
+    }
+    setClearHistoryLoading(true);
+    try {
+      const count = (await invoke("call_history_clear", {
+        startDate: new Date(historyStartDate + "T00:00:00").toISOString(),
+        endDate: new Date(historyEndDate + "T23:59:59").toISOString(),
+        lawAgency: historyAgencyFilter.trim() || null,
+      })) as number;
+      setIsClearHistoryOpen(false);
+      showToast(`Cleared ${count} call${count !== 1 ? "s" : ""} from history.`);
+      await refreshCallHistory();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      showToast(`Clear failed: ${message}`);
+    } finally {
+      setClearHistoryLoading(false);
     }
   };
 
@@ -8809,6 +8911,166 @@ export default function App() {
         </section>
       </>
     );
+  } else if (activeTabId === "call-history") {
+    contentBody = (
+      <>
+        <div className="hero-card">
+          <p className="hero-label">Call History</p>
+          <p className="hero-sub">Completed calls</p>
+          <div className="hero-status">
+            {callHistoryLoading
+              ? "Loading..."
+              : callHistoryError
+                ? callHistoryError
+                : `${filteredCallHistory.length} call${filteredCallHistory.length !== 1 ? "s" : ""}`}
+          </div>
+        </div>
+
+        <section className="detail-card">
+          <div className="driver-section-header">
+            <h2>Search &amp; Filter</h2>
+          </div>
+          <div className="driver-section-actions">
+            <label className="form-field">
+              Search
+              <input
+                type="search"
+                placeholder="Log #, location, notes, car, driver…"
+                value={historySearch}
+                onChange={(e) => setHistorySearch(e.target.value)}
+              />
+            </label>
+            <label className="form-field">
+              Start
+              <input
+                type="date"
+                value={historyStartDate}
+                onChange={(e) => setHistoryStartDate(e.target.value)}
+              />
+            </label>
+            <label className="form-field">
+              End
+              <input
+                type="date"
+                value={historyEndDate}
+                onChange={(e) => setHistoryEndDate(e.target.value)}
+              />
+            </label>
+            <label className="form-field">
+              Agency / Contract
+              <input
+                type="text"
+                placeholder="All agencies"
+                value={historyAgencyFilter}
+                onChange={(e) => setHistoryAgencyFilter(e.target.value)}
+              />
+            </label>
+            <div className="driver-report-presets">
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => void refreshCallHistory()}
+              >
+                Refresh
+              </button>
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => setIsClearHistoryOpen(true)}
+              >
+                Clear / Reset
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {isClearHistoryOpen && (
+          <section className="detail-card">
+            <h2>Confirm Clear History</h2>
+            <p style={{ marginBottom: "0.75rem", color: "var(--text-secondary, #aaa)" }}>
+              This will permanently delete completed calls matching the current date range
+              {historyAgencyFilter.trim() ? ` and agency "${historyAgencyFilter.trim()}"` : ""}.
+              This action cannot be undone.
+            </p>
+            <div className="driver-card-actions-row">
+              <button
+                type="button"
+                className="driver-action-button"
+                disabled={clearHistoryLoading}
+                onClick={() => void handleClearHistory()}
+              >
+                {clearHistoryLoading ? "Clearing…" : "Yes, delete these calls"}
+              </button>
+              <button
+                type="button"
+                className="ghost-button"
+                disabled={clearHistoryLoading}
+                onClick={() => setIsClearHistoryOpen(false)}
+              >
+                Cancel
+              </button>
+            </div>
+          </section>
+        )}
+
+        <section className="detail-card">
+          <div className="aaa-table-wrap">
+            <table className="aaa-table">
+              <thead>
+                <tr>
+                  <th>Log #</th>
+                  <th>Type</th>
+                  <th>Agency</th>
+                  <th>Pickup</th>
+                  <th>Vehicle</th>
+                  <th>Driver</th>
+                  <th>Outcome</th>
+                  <th>Closed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {callHistoryLoading ? (
+                  <tr>
+                    <td colSpan={8} className="driver-empty">Loading…</td>
+                  </tr>
+                ) : callHistoryError ? (
+                  <tr>
+                    <td colSpan={8} className="driver-empty">{callHistoryError}</td>
+                  </tr>
+                ) : filteredCallHistory.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="driver-empty">No completed calls in this range.</td>
+                  </tr>
+                ) : (
+                  filteredCallHistory.map((item) => (
+                    <tr
+                      key={item.call_id}
+                      className={`aaa-table-row${historySelectedCallId === item.call_id ? " is-selected" : ""}`}
+                      style={{ cursor: "pointer" }}
+                      onClick={() => {
+                        setHistorySelectedCallId((prev) =>
+                          prev === item.call_id ? null : item.call_id
+                        );
+                        void openDrawerWindow("call-detail", item.call_id, false);
+                      }}
+                    >
+                      <td>{item.external_call_number ?? "—"}</td>
+                      <td>{item.source_type}</td>
+                      <td>{item.law_agency ?? "—"}</td>
+                      <td>{item.pickup_address}</td>
+                      <td>{item.vehicle_description ?? "—"}</td>
+                      <td>{item.driver_name ?? "—"}</td>
+                      <td>{item.outcome ?? "—"}</td>
+                      <td>{formatIsoTime(item.closed_at)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </>
+    );
   } else if (activeTabId === "settings") {
     const eventTypes = [
       "CALL_CREATED",
@@ -9815,7 +10077,7 @@ export default function App() {
         </nav>
 
         <div className="panel-footer">
-          <div className="shortcut-hint">Ctrl/⌘ + 1-5</div>
+          <div className="shortcut-hint">Ctrl/⌘ + 1-6</div>
         </div>
       </aside>
       )}
