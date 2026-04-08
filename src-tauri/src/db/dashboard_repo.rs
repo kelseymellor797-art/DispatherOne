@@ -61,6 +61,7 @@ pub fn dashboard_get(conn: &Connection) -> rusqlite::Result<DashboardSnapshot> {
         SELECT
           dta.driver_id,
           t.truck_number,
+          t.truck_type,
           dta.start_time
         FROM driver_truck_assignments dta
         JOIN trucks t ON t.id = dta.truck_id
@@ -71,17 +72,20 @@ pub fn dashboard_get(conn: &Connection) -> rusqlite::Result<DashboardSnapshot> {
         Ok((
             row.get::<_, String>(0)?,
             row.get::<_, String>(1)?,
-            row.get::<_, String>(2)?,
+            row.get::<_, Option<String>>(2)?,
+            row.get::<_, String>(3)?,
         ))
     })?;
     for row in truck_rows {
-        let (driver_id, truck_number, start_time) = row?;
+        let (driver_id, truck_number, truck_type, start_time) = row?;
         let entry = current_trucks.entry(driver_id).or_insert(CurrentTruck {
             truck_number: truck_number.clone(),
+            truck_type: truck_type.clone(),
             assigned_at: start_time.clone(),
         });
         if entry.assigned_at < start_time {
             entry.truck_number = truck_number;
+            entry.truck_type = truck_type;
             entry.assigned_at = start_time;
         }
     }

@@ -80,3 +80,12 @@ pub async fn call_tow_distance(
     let miles = meters * 0.000_621_371;
     Ok(miles)
 }
+
+#[tauri::command]
+pub fn calls_history(
+    db: State<DbState>,
+    filters: calls_repo::CallHistoryFilters,
+) -> Result<Vec<calls_repo::CallHistoryItem>, String> {
+    let conn = db.conn.lock().map_err(|_| "DB lock poisoned".to_string())?;
+    calls_repo::list_calls_history(&conn, filters).map_err(|e| e.to_string())
+}

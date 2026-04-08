@@ -142,6 +142,7 @@ pub fn run() {
             commands::calls::call_get,
             commands::calls::aaa_calls_list,
             commands::calls::call_update,
+            commands::calls::calls_history,
             commands::admin::app_reset,
             commands::calls::call_tow_distance,
             commands::google_maps::google_geocode_validate,
