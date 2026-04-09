@@ -713,6 +713,7 @@ const CVPD_LABOR_RATE = 65;
 const CVPD_NEGLIGENCE_FEE = 175;
 const CVPD_GATE_FEE = 65;
 const OVER_MILES_RATE = 12;
+const LE_AGENCIES = ["CHP", "SDPD", "CVPD", "Sheriff", "COD"] as const;
 
 export default function App() {
   const searchParams = new URLSearchParams(window.location.search);
@@ -921,6 +922,7 @@ export default function App() {
     pickupLocation: "",
     dropoffLocation: "",
     leTimestamp: "",
+    leDriverAssigned: "",
     codTimestamp: "",
     ppiTimestamp: "",
     contactId: "",
@@ -4040,6 +4042,10 @@ export default function App() {
       if (callDraft.leTimestamp) {
         extraNotes.push(`LE Timestamp: ${callDraft.leTimestamp}`);
       }
+      const leDriver = callDraft.leDriverAssigned.trim();
+      if (leDriver) {
+        extraNotes.push(`LE Driver: ${leDriver}`);
+      }
     }
     if ((callDraft.callType === "COD" || callDraft.callType === "PPI") && callDraft.serviceType) {
       extraNotes.push(`Service Type: ${callDraft.serviceType}`);
@@ -4606,6 +4612,18 @@ export default function App() {
                     </div>
                   </>
                 ) : null}
+                {call.source_type === "LAW_ENFORCEMENT" ? (
+                  <>
+                    <div className="detail-row">
+                      <span>Car type</span>
+                      <span>{call.vehicle_description ?? extractNoteValue(call.notes, "Car Type") ?? "--"}</span>
+                    </div>
+                    <div className="detail-row detail-row-right">
+                      <span>Driver Assigned</span>
+                      <span>{extractNoteValue(call.notes, "LE Driver") ?? "--"}</span>
+                    </div>
+                  </>
+                ) : null}
                 <div className="detail-row detail-row-right">
                   <span>Created</span>
                   <span>{formatIsoTime(call.created_at)}</span>
@@ -4696,10 +4714,9 @@ export default function App() {
                 setCallDraft((prev) => ({ ...prev, lawAgency: event.target.value }))
               }
             >
-              <option value="CHP">CHP</option>
-              <option value="CVPD">CVPD</option>
-              <option value="SHERIFFS">SHERIFFS</option>
-              <option value="SAN DIEGO">SAN DIEGO</option>
+              {LE_AGENCIES.map((agency) => (
+                <option key={agency} value={agency}>{agency}</option>
+              ))}
             </select>
           </label>
         </div>
@@ -4952,6 +4969,20 @@ export default function App() {
                     setCallDraft((prev) => ({ ...prev, pickupLocation: event.target.value }))
                   }
                 />
+              </label>
+              <label className="form-field">
+                Car type
+                <input
+                  type="text"
+                  value={callDraft.vehicleType}
+                  onChange={(event) =>
+                    setCallDraft((prev) => ({ ...prev, vehicleType: event.target.value }))
+                  }
+                />
+              </label>
+              <label className="form-field detail-row-right">
+                Driver Assigned
+                <input type="text" value={callDraft.leDriverAssigned} readOnly />
               </label>
             </div>
           ) : null}
@@ -5711,8 +5742,7 @@ export default function App() {
                     {drawerEditDraft.source_type === "LAW_ENFORCEMENT" ? (
                       <label className="form-field">
                         Agency
-                        <input
-                          type="text"
+                        <select
                           value={drawerEditDraft.law_agency}
                           onChange={(event) =>
                             setDrawerEditDraft((prev) => ({
@@ -5720,7 +5750,11 @@ export default function App() {
                               law_agency: event.target.value,
                             }))
                           }
-                        />
+                        >
+                          {LE_AGENCIES.map((agency) => (
+                            <option key={agency} value={agency}>{agency}</option>
+                          ))}
+                        </select>
                       </label>
                     ) : null}
                     <label className="form-field detail-row-wide">
@@ -5958,6 +5992,24 @@ export default function App() {
                             (drawerDetailCall ?? drawerCall)?.notes,
                             "Amount Paid"
                           ) ?? "--"}
+                        </span>
+                      </div>
+                    </>
+                  ) : null}
+                  {(drawerDetailCall ?? drawerCall)?.source_type === "LAW_ENFORCEMENT" ? (
+                    <>
+                      <div className="detail-row">
+                        <span>Car type</span>
+                        <span>
+                          {(drawerDetailCall ?? drawerCall)?.vehicle_description ??
+                            extractNoteValue((drawerDetailCall ?? drawerCall)?.notes, "Car Type") ??
+                            "--"}
+                        </span>
+                      </div>
+                      <div className="detail-row detail-row-right">
+                        <span>Driver Assigned</span>
+                        <span>
+                          {extractNoteValue((drawerDetailCall ?? drawerCall)?.notes, "LE Driver") ?? "--"}
                         </span>
                       </div>
                     </>
@@ -8679,6 +8731,8 @@ export default function App() {
                             <div className="call-report-meta">
                               <span>Log #: {detail?.external_call_number ?? "--"}</span>
                               <span>Location: {detail?.pickup_address ?? "--"}</span>
+                              <span>Car: {detail?.vehicle_description ?? extractNoteValue(detail?.notes, "Car Type") ?? "--"}</span>
+                              <span>Driver: {extractNoteValue(detail?.notes, "LE Driver") ?? "--"}</span>
                             </div>
                           </div>
                         );
